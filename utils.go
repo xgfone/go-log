@@ -81,3 +81,10 @@ func ParseSize(s string) (size int64, err error) {
 
 	return
 }
+
+// WrapPanic wraps and logs the panic.
+func WrapPanic(fields ...Field) {
+	if err := recover(); err != nil {
+		Error("panic", append(fields, CallerStack("stack", true), F("err", err))...)
+	}
+}
