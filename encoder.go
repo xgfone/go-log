@@ -165,7 +165,7 @@ func (e *JSONEncoder) Encode(r Record) {
 	// JSON End
 	buf.AppendByte('}')
 
-	if e.Newline {
+	if e.Newline && buf.buf[len(buf.buf)-1] != '\n' {
 		buf.AppendByte('\n')
 	}
 
