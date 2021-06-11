@@ -1,10 +1,11 @@
-# go-log [![Build Status](https://travis-ci.org/xgfone/go-log.svg?branch=master)](https://travis-ci.org/xgfone/go-log) [![GoDoc](https://godoc.org/github.com/xgfone/go-log?status.svg)](http://godoc.org/github.com/xgfone/go-log) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/xgfone/go-log/master/LICENSE)
+# go-log [![Build Status](https://api.travis-ci.com/xgfone/go-log.svg?branch=master)](https://travis-ci.com/github/xgfone/go-log) [![GoDoc](https://pkg.go.dev/badge/github.com/xgfone/go-log)](https://pkg.go.dev/github.com/xgfone/go-log) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/xgfone/go-log/master/LICENSE)
 
 Provide a simple, flexible, extensible, powerful and structured logging tool based on the level, which has done the better balance between the flexibility and the performance. It is inspired by [log15](https://github.com/inconshreveable/log15), [logrus](https://github.com/sirupsen/logrus), [go-kit](https://github.com/go-kit/kit) and [zerolog](github.com/rs/zerolog).
 
 
 ## Features
 
+- Support `Go1.7+`.
 - The better performance.
 - Lazy evaluation of expensive operations.
 - Simple, Flexible, Extensible, Powerful and Structured.
