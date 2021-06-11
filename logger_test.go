@@ -31,7 +31,7 @@ func TestLogger(t *testing.T) {
 	encoder.SetWriter(StreamWriter(buf))
 	encoder.TimeKey = ""
 
-	logger.Info(`"test json encoder"`,
+	fields := []Field{
 		F("nil", nil),
 		F("bool", true),
 		F("int", 10),
@@ -58,7 +58,8 @@ func TestLogger(t *testing.T) {
 		F("[]int64", []int64{36, 37}),
 		F("map[string]interface{}", map[string]interface{}{"a": "38", "b": "39"}),
 		F("map[string]string", map[string]string{"c": "40", "d": "41"}),
-	)
+	}
+	logger.Info(`"test json encoder"`, fields...)
 
 	type encoderT struct {
 		Msg      string      `json:"msg"`
@@ -100,7 +101,7 @@ func TestLogger(t *testing.T) {
 		Msg:      `"test json encoder"`,
 		Lvl:      "INFO",
 		Logger:   "test",
-		Stack:    "[github.com/xgfone/go-log/logger_test.go:34]",
+		Stack:    "[github.com/xgfone/go-log/logger_test.go:62]",
 		Ctx:      "ctxvalue",
 		Nil:      nil,
 		Bool:     true,
