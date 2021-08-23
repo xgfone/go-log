@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync/atomic"
 
 	"github.com/xgfone/go-atexit"
 )
@@ -30,9 +31,11 @@ type Logger struct {
 	Name     string
 	Ctxs     []Field
 	Depth    int
-	Level    Level
 	Encoder  Encoder
 	ExitCode int
+
+	logger atomic.Value
+	level  uint32
 }
 
 // New creates a new Logger to encode the log record as JSON
@@ -43,7 +46,7 @@ func New(name string) *Logger {
 	return &Logger{
 		Name:     name,
 		Ctxs:     ctxs,
-		Level:    LvlDebug,
+		level:    uint32(LvlDebug),
 		Encoder:  encoder,
 		ExitCode: 1,
 	}
@@ -51,12 +54,35 @@ func New(name string) *Logger {
 
 // NewSimpleLogger returns a new simple logger.
 func NewSimpleLogger(name, level, filepath, filesize string, filenum int) *Logger {
-	log := New(name).WithLevel(NameToLevel(level))
+	log := New(name)
+	log.level = uint32(NameToLevel(level))
 	if filepath != "" {
 		log.Encoder.SetWriter(SafeWriter(FileWriter(filepath, filesize, filenum)))
 	}
 	return log
 }
+
+// GetLevel returns the level. It will return the level of the parent logger,
+// however, if the logger is a child and does not set the level.
+func (l *Logger) GetLevel() Level {
+	if v := l.logger.Load(); v != nil {
+		if logger := v.(*Logger); logger != nil {
+			return logger.GetLevel()
+		}
+	}
+	return Level(atomic.LoadUint32(&l.level))
+}
+
+// SetLevel resets the level.
+func (l *Logger) SetLevel(level Level) {
+	atomic.StoreUint32(&l.level, uint32(level))
+	l.logger.Store((*Logger)(nil))
+}
+
+// SetParent sets the parent logger to inherit its level.
+//
+// If logger is nil, clear the parent logger.
+func (l *Logger) SetParent(logger *Logger) { l.logger.Store(logger) }
 
 // StdLog converts the Logger to the std log.
 func (l *Logger) StdLog(prefix string, flags ...int) *log.Logger {
@@ -64,56 +90,57 @@ func (l *Logger) StdLog(prefix string, flags ...int) *log.Logger {
 	if len(flags) > 0 {
 		flag = flags[0]
 	}
-	return log.New(NewIOWriter(l.Encoder.Writer(), l.Level), prefix, flag)
+	return log.New(NewIOWriter(l.Encoder.Writer(), l.GetLevel()), prefix, flag)
 }
 
-// Clone clones itself and returns a new one.
-func (l *Logger) Clone() *Logger {
+// New clones itself as the parent and returns a new one as the child.
+func (l *Logger) New() *Logger {
 	var ctxs []Field
 	if len(l.Ctxs) != 0 {
 		ctxs = append([]Field{}, l.Ctxs...)
 	}
 
-	return &Logger{
+	logger := &Logger{
 		Ctxs:    ctxs,
 		Name:    l.Name,
 		Depth:   l.Depth,
-		Level:   l.Level,
 		Encoder: l.Encoder,
 	}
+	logger.logger.Store(l)
+	return logger
 }
 
 // WithName returns a new Logger with the new name.
 func (l *Logger) WithName(name string) *Logger {
-	ll := l.Clone()
+	ll := l.New()
 	ll.Name = name
 	return ll
 }
 
 // WithLevel returns a new Logger with the new level.
 func (l *Logger) WithLevel(level Level) *Logger {
-	ll := l.Clone()
-	ll.Level = level
+	ll := l.New()
+	ll.SetLevel(level)
 	return ll
 }
 
 // WithEncoder returns a new Logger with the new encoder.
 func (l *Logger) WithEncoder(e Encoder) *Logger {
-	ll := l.Clone()
+	ll := l.New()
 	ll.Encoder = e
 	return ll
 }
 
 // WithDepth returns a new Logger, which will increase the depth.
 func (l *Logger) WithDepth(depth int) *Logger {
-	ll := l.Clone()
+	ll := l.New()
 	ll.Depth += depth
 	return ll
 }
 
 // WithCtx returns a new Logger with the new context fields.
 func (l *Logger) WithCtx(ctxs ...Field) *Logger {
-	ll := l.Clone()
+	ll := l.New()
 	ll.Ctxs = append(ll.Ctxs, ctxs...)
 	return ll
 }
@@ -123,7 +150,7 @@ func (l *Logger) WithCtx(ctxs ...Field) *Logger {
 // If lvl is equal to LvlFatal, the program exits with ExitCode.
 func (l *Logger) Log(lvl Level, depth int, msgfmt string, msgargs []interface{},
 	fields []Field) {
-	if lvl < l.Level {
+	if lvl < l.GetLevel() {
 		return
 	}
 

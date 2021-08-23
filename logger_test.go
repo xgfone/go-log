@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -101,7 +102,7 @@ func TestLogger(t *testing.T) {
 		Msg:      `"test json encoder"`,
 		Lvl:      "INFO",
 		Logger:   "test",
-		Stack:    "[github.com/xgfone/go-log/logger_test.go:62]",
+		Stack:    "[github.com/xgfone/go-log/logger_test.go:63]",
 		Ctx:      "ctxvalue",
 		Nil:      nil,
 		Bool:     true,
@@ -186,5 +187,52 @@ func TestLoggerSF(t *testing.T) {
 	} else if !reflect.DeepEqual(result, expect) {
 		t.Error(buf.String())
 		t.Errorf("expect '%+v', but got '%+v'", expect, result)
+	}
+}
+
+func TestLoggerInheritance(t *testing.T) {
+	parent := New("parent")
+	parent.Ctxs = nil
+	child := parent.WithName("child")
+
+	buf := bytes.NewBuffer(nil)
+	encoder := parent.Encoder.(*JSONEncoder)
+	encoder.SetWriter(StreamWriter(buf))
+	encoder.TimeKey = ""
+
+	parent.Info("parent info 1")
+	child.Info("child info 1")
+
+	parent.SetLevel(LvlWarn)
+	parent.Info("parent info 2")
+	child.Info("child info 2")
+	if lvl := child.GetLevel(); lvl != LvlWarn {
+		t.Errorf("child logger expect level '%s', but got '%s'\n", LvlWarn, lvl)
+	}
+
+	child.SetLevel(LvlInfo)
+	parent.Info("parent info 3")
+	child.Info("child info 3")
+	if lvl := child.GetLevel(); lvl != LvlInfo {
+		t.Errorf("child logger expect level '%s', but got '%s'\n", LvlInfo, lvl)
+	}
+
+	child.SetParent(parent)
+	child.Info("child info 4")
+
+	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+	if len(lines) != 3 {
+		t.Errorf("expect %d lines, but got %d: %v\n", 3, len(lines), lines)
+	} else {
+		expects := []string{
+			`{"lvl":"INFO","logger":"parent","msg":"parent info 1"}`,
+			`{"lvl":"INFO","logger":"child","msg":"child info 1"}`,
+			`{"lvl":"INFO","logger":"child","msg":"child info 3"}`,
+		}
+		for i := 0; i < 3; i++ {
+			if expects[i] != lines[i] {
+				t.Errorf("%d: expect '%s', but got '%s'\n", i, expects[i], lines[i])
+			}
+		}
 	}
 }
