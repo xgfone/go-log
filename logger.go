@@ -79,6 +79,14 @@ func (l *Logger) SetLevel(level Level) {
 	l.logger.Store((*Logger)(nil))
 }
 
+// GetParent returns the parent logger of the current logger.
+func (l *Logger) GetParent() *Logger {
+	if v := l.logger.Load(); v != nil {
+		return v.(*Logger)
+	}
+	return nil
+}
+
 // SetParent sets the parent logger to inherit its level.
 //
 // If logger is nil, clear the parent logger.
