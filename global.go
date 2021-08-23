@@ -17,6 +17,14 @@ package log
 // DefalutLogger is the default global logger.
 var DefalutLogger = New("")
 
+// GetLevel is equal to DefalutLogger.GetLevel() to return the level
+// of the default logger.
+func GetLevel() Level { return DefalutLogger.GetLevel() }
+
+// SetLevel is equal to DefalutLogger.SetLevel(level) to reset the level
+// of the default logger.
+func SetLevel(level Level) { DefalutLogger.SetLevel(level) }
+
 // WithCtx is equal to DefalutLogger.WithCtx(fields...).
 func WithCtx(fields ...Field) *Logger { return DefalutLogger.WithCtx(fields...) }
 
