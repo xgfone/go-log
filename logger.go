@@ -201,32 +201,32 @@ func (l *Logger) logs(lvl Level, depth int, msg string, keyAndValues []interface
 	l.Log(lvl, depth+1, msg, nil, fields)
 }
 
-// TraceS is the same as Trace, but convert keyAndValues to []Field.
+// Traces is the same as Trace, but convert keyAndValues to []Field.
 func (l *Logger) Traces(msg string, keyAndValues ...interface{}) {
 	l.logs(LvlTrace, 1, msg, keyAndValues)
 }
 
-// DebugS is the same as Debug, but convert keyAndValues to []Field.
+// Debugs is the same as Debug, but convert keyAndValues to []Field.
 func (l *Logger) Debugs(msg string, keyAndValues ...interface{}) {
 	l.logs(LvlDebug, 1, msg, keyAndValues)
 }
 
-// InfoS is the same as Info, but convert keyAndValues to []Field.
+// Infos is the same as Info, but convert keyAndValues to []Field.
 func (l *Logger) Infos(msg string, keyAndValues ...interface{}) {
 	l.logs(LvlInfo, 1, msg, keyAndValues)
 }
 
-// WarnS is the same as Warn, but convert keyAndValues to []Field.
+// Warns is the same as Warn, but convert keyAndValues to []Field.
 func (l *Logger) Warns(msg string, keyAndValues ...interface{}) {
 	l.logs(LvlWarn, 1, msg, keyAndValues)
 }
 
-// ErrorS is the same as Error, but convert keyAndValues to []Field.
+// Errors is the same as Error, but convert keyAndValues to []Field.
 func (l *Logger) Errors(msg string, keyAndValues ...interface{}) {
 	l.logs(LvlError, 1, msg, keyAndValues)
 }
 
-// FatalS is the same as Fatal, but convert keyAndValues to []Field.
+// Fatals is the same as Fatal, but convert keyAndValues to []Field.
 func (l *Logger) Fatals(msg string, keyAndValues ...interface{}) {
 	l.logs(LvlFatal, 1, msg, keyAndValues)
 }
