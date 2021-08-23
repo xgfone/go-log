@@ -8,12 +8,13 @@ Provide a simple, flexible, extensible, powerful and structured logging tool bas
 - Support `Go1.7+`.
 - The better performance.
 - Lazy evaluation of expensive operations.
+- Support the level inherited from the parent logger.
 - Simple, Flexible, Extensible, Powerful and Structured.
 - Avoid to allocate the memory on heap as far as possible.
 - Child loggers which inherit and add their own private context.
 - Built-in support for logging to files, syslog, etc. See `Writer`.
 
-The logger supports two kinds of the logger interfaces:
+The logger supports three kinds of the logger interfaces:
 ```go
 // For Key-Value fields
 Trace(msg string, fields ...Field)
@@ -115,6 +116,48 @@ type Writer interface {
 ```
 
 There are some built-in writers, such as `DiscardWriter`, `LevelWriter`, `SafeWriter`, `SplitWriter`, `StreamWriter` and `FileWriter`.
+
+
+### Level Inheritance
+```go
+package main
+
+import "github.com/xgfone/go-log"
+
+func main() {
+	parentLogger := log.New("parent")
+	parentLogger.Ctxs = nil // Clear the default context in order to test.
+	childLogger := parentLogger.WithName("child")
+
+	// Use the default level, that's LvlDebug, to output the info log.
+	parentLogger.Info("parent info 1")
+	childLogger.Info("child info 1")
+
+	// Reset the level of the parent logger, and the child logger will inherit it.
+	parentLogger.SetLevel(log.LvlWarn)
+
+	// The info logs won't be outputted.
+	parentLogger.Info("parent info 2")
+	childLogger.Info("child info 2")
+
+	// Set the level of the child logger and no longer inherit the level of the parent.
+	childLogger.SetLevel(log.LvlInfo)
+
+	// Only the child log will be outputted.
+	parentLogger.Info("parent info 3")
+	childLogger.Info("child info 3")
+
+	// Set the parent logger and inherit the level of the parent.
+	childLogger.SetParent(parentLogger)
+	parentLogger.Info("parent info 4")
+	childLogger.Info("child info 4")
+
+	// Output:
+	// {"t":"2021-08-23T23:43:45.651989+08:00","lvl":"INFO","logger":"parent","msg":"parent info 1"}
+	// {"t":"2021-08-23T23:43:45.652117+08:00","lvl":"INFO","logger":"child","msg":"child info 1"}
+	// {"t":"2021-08-23T23:43:45.652123+08:00","lvl":"INFO","logger":"child","msg":"child info 3"}
+}
+```
 
 
 ### Lazy evaluation

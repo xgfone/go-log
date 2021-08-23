@@ -20,6 +20,7 @@
 //
 //   - The better performance.
 //   - Lazy evaluation of expensive operations.
+//   - Support the level inherited from the parent logger.
 //   - Simple, Flexible, Extensible, Powerful and Structured.
 //   - Avoid to allocate the memory on heap as far as possible.
 //   - Child loggers which inherit and add their own private context.
