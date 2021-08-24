@@ -34,19 +34,19 @@ type Logger struct {
 	Encoder  Encoder
 	ExitCode int
 
-	logger atomic.Value
-	level  uint32
+	level  int32
+	logger *Logger
 }
 
-// New creates a new Logger to encode the log record as JSON
-// and output the log to os.Stdout.
+// New creates a new root Logger, which has no parent logger,
+// to encode the log record as JSON and output the log to os.Stdout.
 func New(name string) *Logger {
 	ctxs := []Field{CallerStack("stack", true)}
 	encoder := NewJSONEncoder(SafeWriter(StreamWriter(os.Stdout)))
 	return &Logger{
 		Name:     name,
 		Ctxs:     ctxs,
-		level:    uint32(LvlDebug),
+		level:    int32(LvlDebug),
 		Encoder:  encoder,
 		ExitCode: 1,
 	}
@@ -55,42 +55,43 @@ func New(name string) *Logger {
 // NewSimpleLogger returns a new simple logger.
 func NewSimpleLogger(name, level, filepath, filesize string, filenum int) *Logger {
 	log := New(name)
-	log.level = uint32(NameToLevel(level))
+	log.level = int32(NameToLevel(level))
 	if filepath != "" {
 		log.Encoder.SetWriter(SafeWriter(FileWriter(filepath, filesize, filenum)))
 	}
 	return log
 }
 
-// GetLevel returns the level. It will return the level of the parent logger,
-// however, if the logger is a child and does not set the level.
-func (l *Logger) GetLevel() Level {
-	if v := l.logger.Load(); v != nil {
-		if logger := v.(*Logger); logger != nil {
-			return logger.GetLevel()
-		}
-	}
-	return Level(atomic.LoadUint32(&l.level))
-}
-
-// SetLevel resets the level.
-func (l *Logger) SetLevel(level Level) {
-	atomic.StoreUint32(&l.level, uint32(level))
-	l.logger.Store((*Logger)(nil))
-}
-
 // GetParent returns the parent logger of the current logger.
-func (l *Logger) GetParent() *Logger {
-	if v := l.logger.Load(); v != nil {
-		return v.(*Logger)
+//
+// If there is no parent logger, return nil.
+func (l *Logger) GetParent() *Logger { return l.logger }
+
+// GetLevel returns the level thread-safety, which will return the level
+// of the parent logger if the current logger does not set the level.
+func (l *Logger) GetLevel() Level {
+	if level := atomic.LoadInt32(&l.level); level >= 0 {
+		return Level(level)
+	} else if l.logger != nil {
+		return l.logger.GetLevel()
 	}
-	return nil
+	panic(fmt.Errorf("the logger named '%s' does not set the level", l.Name))
 }
 
-// SetParent sets the parent logger to inherit its level.
+// SetLevel resets the level thread-safety.
+func (l *Logger) SetLevel(level Level) {
+	atomic.StoreInt32(&l.level, int32(level))
+}
+
+// UnsetLevel unsets the level to inherit the level of the parent logger.
 //
-// If logger is nil, clear the parent logger.
-func (l *Logger) SetParent(logger *Logger) { l.logger.Store(logger) }
+// Notice: The current logger must has the parent logger. Or panic.
+func (l *Logger) UnsetLevel() {
+	if l.logger == nil {
+		panic(fmt.Errorf("the logger named '%s has no parent logger", l.Name))
+	}
+	atomic.StoreInt32(&l.level, -1)
+}
 
 // StdLog converts the Logger to the std log.
 func (l *Logger) StdLog(prefix string, flags ...int) *log.Logger {
@@ -109,12 +110,14 @@ func (l *Logger) New() *Logger {
 	}
 
 	logger := &Logger{
-		Ctxs:    ctxs,
-		Name:    l.Name,
-		Depth:   l.Depth,
-		Encoder: l.Encoder,
+		Ctxs:     ctxs,
+		Name:     l.Name,
+		Depth:    l.Depth,
+		Encoder:  l.Encoder,
+		ExitCode: l.ExitCode,
+		logger:   l,
+		level:    -1,
 	}
-	logger.logger.Store(l)
 	return logger
 }
 

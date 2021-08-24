@@ -147,8 +147,8 @@ func main() {
 	parentLogger.Info("parent info 3")
 	childLogger.Info("child info 3")
 
-	// Set the parent logger and inherit the level of the parent.
-	childLogger.SetParent(parentLogger)
+	// Unset the level of the child logger to inherit the level of the parent.
+	childLogger.UnsetLevel()
 	parentLogger.Info("parent info 4")
 	childLogger.Info("child info 4")
 

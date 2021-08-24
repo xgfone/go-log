@@ -217,7 +217,7 @@ func TestLoggerInheritance(t *testing.T) {
 		t.Errorf("child logger expect level '%s', but got '%s'\n", LvlInfo, lvl)
 	}
 
-	child.SetParent(parent)
+	child.UnsetLevel()
 	child.Info("child info 4")
 
 	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
