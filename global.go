@@ -15,7 +15,7 @@
 package log
 
 // DefalutLogger is the default global logger.
-var DefalutLogger = New("")
+var DefalutLogger = New("root")
 
 // GetLevel is equal to DefalutLogger.GetLevel() to return the level
 // of the default logger.
