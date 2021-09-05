@@ -37,3 +37,6 @@ vendor/
 
 # VS Code
 .vscode/
+
+# Unix hidden files
+.*
