@@ -139,3 +139,17 @@ func Printf(msg string, args ...interface{}) {
 func Ef(err error, format string, args ...interface{}) {
 	DefalutLogger.Log(LvlError, 1, format, args, []Field{E(err)})
 }
+
+// IfErr logs the message and fields with the ERROR level
+// only if err is not equal to nil.
+func IfErr(err error, msg string, fields ...Field) {
+	if err != nil {
+		if len(fields) == 0 {
+			fields = []Field{E(err)}
+		} else {
+			fields = append(fields, E(err))
+		}
+
+		DefalutLogger.Log(LvlError, 1, msg, nil, fields)
+	}
+}
