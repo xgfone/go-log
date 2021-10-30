@@ -169,15 +169,14 @@ func (l *Logger) Log(lvl Level, depth int, msgfmt string, msgargs []interface{},
 		msgfmt = fmt.Sprintf(msgfmt, msgargs...)
 	}
 
-	r := Record{
+	l.Encoder.Encode(Record{
 		Name:   l.Name,
 		Depth:  l.Depth + 1 + fixDepth(depth),
 		Lvl:    lvl,
 		Msg:    msgfmt,
 		Ctxs:   l.Ctxs,
 		Fields: fields,
-	}
-	l.Encoder.Encode(r)
+	})
 
 	if lvl == LvlFatal {
 		atexit.Exit(l.ExitCode)
