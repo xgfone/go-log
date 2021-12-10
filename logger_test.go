@@ -106,8 +106,8 @@ func TestLoggerInheritance(t *testing.T) {
 	} else {
 		expects := []string{
 			`{"lvl":"INFO","logger":"parent","msg":"parent info 1"}`,
-			`{"lvl":"INFO","logger":"child","msg":"child info 1"}`,
-			`{"lvl":"INFO","logger":"child","msg":"child info 3"}`,
+			`{"lvl":"INFO","logger":"parent.child","msg":"child info 1"}`,
+			`{"lvl":"INFO","logger":"parent.child","msg":"child info 3"}`,
 		}
 		for i := 0; i < 3; i++ {
 			if expects[i] != lines[i] {

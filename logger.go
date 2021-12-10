@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync/atomic"
 
 	"github.com/xgfone/go-atexit"
@@ -121,10 +122,11 @@ func (l *Logger) New() *Logger {
 	return logger
 }
 
-// WithName returns a new Logger with the new name.
+// WithName returns a new Logger with the new sub-name, that's,
+// use l.Name+"."+name as the full name of the new child logger.
 func (l *Logger) WithName(name string) *Logger {
 	ll := l.New()
-	ll.Name = name
+	ll.Name = strings.Join([]string{ll.Name, name}, ".")
 	return ll
 }
 
