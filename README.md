@@ -1,45 +1,33 @@
 # Go Log [![Build Status](https://github.com/xgfone/go-log/actions/workflows/go.yml/badge.svg)](https://github.com/xgfone/go-log/actions/workflows/go.yml) [![GoDoc](https://pkg.go.dev/badge/github.com/xgfone/go-log)](https://pkg.go.dev/github.com/xgfone/go-log) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/xgfone/go-log/master/LICENSE)
 
-Provide a simple, flexible, extensible, powerful and structured logging tool based on the level, which has done the better balance between the flexibility and the performance. It is inspired by [log15](https://github.com/inconshreveable/log15), [logrus](https://github.com/sirupsen/logrus), [go-kit](https://github.com/go-kit/kit) and [zerolog](github.com/rs/zerolog).
+Provide a simple, flexible, extensible, powerful and structured logger based on the level, which has done the better balance between the flexibility and the performance. It is inspired by [log15](https://github.com/inconshreveable/log15), [logrus](https://github.com/sirupsen/logrus), [go-kit](https://github.com/go-kit/kit) and [zerolog](github.com/rs/zerolog), which collects the log message with the key-value contexts, encodes them into the buffer, then writes the encoded log from the buffer into the underlying writer.
 
 
 ## Features
 
 - Support `Go1.7+`.
-- The better performance.
-- Lazy evaluation of expensive operations.
-- Support the level inherited from the parent logger.
+- Compatible with the stdlib `log.Printf`.
+- The better performance, see [Benchmark](#performance).
+    - Lazy evaluation of expensive operations.
+    - Avoid to allocate the memory on heap as far as possible.
+    - Encode in real time or pre-encode the key-value contexts into the buffer cache.
 - Simple, Flexible, Extensible, Powerful and Structured.
-- Avoid to allocate the memory on heap as far as possible.
-- Child loggers which inherit and add their own private context.
-- Built-in support for logging to files, syslog, etc. See `Writer`.
+- Support to customize the log encoder and writer.
+- Provide the simple and easy-used api interface.
+    ```go
+    type Logger interface {
+        // IsEnabled reports whether the logger is enabled.
+        IsEnabled() bool
 
-The logger supports three kinds of the logger interfaces:
-```go
-// For Key-Value fields
-Trace(msg string, fields ...Field)
-Debug(msg string, fields ...Field)
-Info(msg string, fields ...Field)
-Warn(msg string, fields ...Field)
-Error(msg string, fields ...Field)
-Fatal(mst string, fields ...Field)
+        // Kv and Kvs append the key-value contexts and return the logger itself.
+        Kv(key string, value interface{}) Logger
+        Kvs(kvs ...interface{}) Logger
 
-// For format string
-Tracef(msgfmt string, args ...interface{})
-Debugf(msgfmt string, args ...interface{})
-Infof(msgfmt string, args ...interface{})
-Warnf(msgfmt string, args ...interface{})
-Errorf(msgfmt string, args ...interface{})
-Fatalf(msgfmt string, args ...interface{})
-
-// For Key-Value sequences
-Traces(msg string, keyAndValues ...interface{})
-Debugs(msg string, keyAndValues ...interface{})
-Infos(msg string, keyAndValues ...interface{})
-Warns(msg string, keyAndValues ...interface{})
-Errors(msg string, keyAndValues ...interface{})
-Fatals(mst string, keyAndValues ...interface{})
-```
+        // Print and Printf log the message and end the logger.
+        Printf(msg string, args ...interface{})
+        Print(args ...interface{})
+    }
+    ```
 
 
 ## Example
@@ -47,43 +35,59 @@ Fatals(mst string, keyAndValues ...interface{})
 ```go
 package main
 
-import "github.com/xgfone/go-log"
+import (
+    "errors"
+    "flag"
 
-func main() {
-	logger := log.New("name").WithLevel(log.LvlWarn)
+    "github.com/xgfone/go-log"
+)
 
-	logger.Info("log msg", log.F("key1", "value1"), log.F("key2", "value2"))
-	logger.Error("log msg", log.F("key1", "value1"), log.F("key2", "value2"))
+var logfile string
+var loglevel string
 
-	// Output:
-	// {"t":"2021-05-28T22:00:00.092641+08:00","lvl":"ERROR","logger":"name","stack":"[main.go:9]","key1":"value1","key2":"value2","msg":"log msg"}
+func logError(err error, msg string, kvs ...interface{}) {
+    if err == nil {
+        return
+    }
+    log.Log(log.LvlError, 1).Kvs(kvs...).Kv("err", err).Printf(msg)
 }
-```
-
-```go
-package main
-
-import "github.com/xgfone/go-log"
 
 func main() {
-	log.DefalutLogger.Level = log.LvlWarn
+    // Parse the CLI options.
+    flag.StringVar(&logfile, "logfile", "", "The log file path, default to stderr.")
+    flag.StringVar(&loglevel, "loglevel", "info", "The log level, such as debug, info, etc.")
+    flag.Parse()
 
-	// Emit the log with the fields.
-	log.Info("log msg", log.F("key1", "value1"), log.F("key2", "value2"))
-	log.Error("log msg", log.F("key1", "value1"), log.F("key2", "value2"))
+    // Configure the logger.
+    writer := log.FileWriter(logfile, "100M", 100)
+    log.SetWriter(writer).SetLevel(log.ParseLevel(loglevel))
+    defer writer.Close()
 
-	// Emit the log with key-values
-	log.Infos("log msg", "key1", "value1", "key2", "value2")
-	log.Errors("log msg", "key1", "value1", "key2", "value2")
+    // Emit the log.
+    log.Print("msg1")
+    log.Printf("msg%d", 2)
+    log.Kv("key1", "value1").Print("msg3")
+    log.Debug().Kv("key2", "value2").Print("msg4") // no log output.
+    log.Info().Kv("key3", "value3").Print("msg5")
+    log.Log(log.LvlInfo, 0).Kv("key4", "value4").Printf("msg6")
+    logError(nil, "msg7", "key5", "value5", "key6", 666, "key7", "value7")
+    logError(errors.New("error"), "msg8", "key8", 888, "key9", "value9")
 
-	// Emit the log with the formatter.
-	log.Infof("log %s", "msg")
-	log.Errorf("log %s", "msg")
+    // For Clild Logger
+    child1Logger := log.WithName("child1")
+    child2Logger := child1Logger.New("child2")
+    child1Logger.Kv("ckey1", "cvalue1").Print("msg9")
+    child2Logger.Printf("msg10")
 
-	// Output:
-	// {"t":"2021-05-28T22:07:07.394835+08:00","lvl":"ERROR","stack":"[main.go:10]","key1":"value1","key2":"value2","msg":"log msg"}
-	// {"t":"2021-05-28T22:07:07.395066+08:00","lvl":"ERROR","stack":"[main.go:14]","key1":"value1","key2":"value2","msg":"log msg"}
-	// {"t":"2021-05-28T22:07:07.3951+08:00","lvl":"ERROR","stack":"[main.go:18]","msg":"log msg"}
+    // $ go run main.go
+    // {"t":"2021-12-12T11:41:11.2844234+08:00","lvl":"info","caller":"main.go:32","msg":"msg1"}
+    // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:33","msg":"msg2"}
+    // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:34","key1":"value1","msg":"msg3"}
+    // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:36","key3":"value3","msg":"msg5"}
+    // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:37","key4":"value4","msg":"msg6"}
+    // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"error","caller":"main.go:39","key8":888,"key9":"value9","err":"error","msg":"msg8"}
+    // {"t":"2021-12-12T12:22:15.2466635+08:00","lvl":"info","logger":"child1","caller":"main.go:44","ckey1":"cvalue1","msg":"msg9"}
+    // {"t":"2021-12-12T12:22:15.2466635+08:00","lvl":"info","logger":"child1.child2","caller":"main.go:45","msg":"msg10"}
 }
 ```
 
@@ -92,76 +96,74 @@ func main() {
 
 ```go
 type Encoder interface {
-	// Writer returns the writer.
-	Writer() Writer
+    // Start starts to encode the log record into the buffer dst.
+    Start(dst []byte, loggerName string, level int) []byte
 
-	// SetWriter resets the writer.
-	SetWriter(Writer)
+    // Encode encodes the key-value with the stack depth into the buffer dst.
+    Encode(dst []byte, key string, value interface{}) []byte
 
-	// Encode encodes the log record and writes it into the writer.
-	Encode(Record)
+    // End ends to encode the log record with the message into the buffer dst.
+    End(dst []byte, msg string) []byte
 }
 ```
 
-This pakcage has implemented the Nothing and JSON encoder, such as `NothingEncoder` and `JSONEncoder`.
+This pakcage has implemented the JSON encoder `JSONEncoder`, but you can customize yourself, such as `TextEncoder`.
 
 
 ### Writer
 
+The logger uses the stdlib `io.Writer` interface as the log writer.
+
+In order to support to write the leveled log, you can provide a `LevelWriter` to the log engine, which prefers to try to use `LevelWriter` to write the log into it.
 ```go
-type Writer interface {
-	WriteLevel(level Level, data []byte) (n int, err error)
-	io.Closer
+type LevelWriter interface {
+    WriteLevel(level int, data []byte) (n int, err error)
+    io.Writer
 }
 ```
 
-There are some built-in writers, such as `DiscardWriter`, `LevelWriter`, `SafeWriter`, `SplitWriter`, `StreamWriter` and `FileWriter`.
+The package provides an additional writer based on the file, that's, `FileWriter`.
 
 
-### Level Inheritance
+### Sampler
+
+The logger engine provides the sampler policy for each logger to filter the log message by the logger name and level during the program is running.
+```go
+type Sampler interface {
+    // Sample reports whether the log message should be sampled.
+    // If the log message should be sampled, return true. Or, return false,
+    // that's, the log message will be discarded.
+    Sample(loggerName string, level int) bool
+}
+```
+
+Notice: in order to switch the level of all the loggers once, you maybe use the global level function `SetGlobalLevel`, such as `SetGlobalLevel(LvlError)`, which will disable all the log messages whose level is lower than `LvlError`.
+
+
+### Lazy evaluation
+The logger provides the hook `Hook` to support the Lazy evaluation.
+```go
+type Hook interface {
+    Run(logger Logger, loggerName string, level int, depth int)
+}
+```
+
+The package provides a dynamic key-value context `Caller` to calculate the file and line where the caller is.
 ```go
 package main
 
 import "github.com/xgfone/go-log"
 
 func main() {
-	parentLogger := log.New("parent")
-	parentLogger.Ctxs = nil // Clear the default context in order to test.
-	childLogger := parentLogger.WithName("child")
+    logger := log.New("root").AddHooks(log.Caller("caller"))
+    logger.Info().Kv("key", "value").Printf("msg")
 
-	// Use the default level, that's LvlDebug, to output the info log.
-	parentLogger.Info("parent info 1")
-	childLogger.Info("child info 1")
-
-	// Reset the level of the parent logger, and the child logger will inherit it.
-	parentLogger.SetLevel(log.LvlWarn)
-
-	// The info logs won't be outputted.
-	parentLogger.Info("parent info 2")
-	childLogger.Info("child info 2")
-
-	// Set the level of the child logger and no longer inherit the level of the parent.
-	childLogger.SetLevel(log.LvlInfo)
-
-	// Only the child log will be outputted.
-	parentLogger.Info("parent info 3")
-	childLogger.Info("child info 3")
-
-	// Unset the level of the child logger to inherit the level of the parent.
-	childLogger.UnsetLevel()
-	parentLogger.Info("parent info 4")
-	childLogger.Info("child info 4")
-
-	// Output:
-	// {"t":"2021-08-23T23:43:45.651989+08:00","lvl":"INFO","logger":"parent","msg":"parent info 1"}
-	// {"t":"2021-08-23T23:43:45.652117+08:00","lvl":"INFO","logger":"child","msg":"child info 1"}
-	// {"t":"2021-08-23T23:43:45.652123+08:00","lvl":"INFO","logger":"child","msg":"child info 3"}
+    // $ go run main.go
+    // {"t":"2021-12-12T15:09:41.6890462+08:00","lvl":"info","logger":"root","caller":"main.go:7","key":"value","msg":"msg"}
 }
 ```
 
-
-### Lazy evaluation
-`Field` supports the lazy evaluation, such as `F("key", func() interface{} { return "value" })`.
+Not only the lazy evaluation, but the hook is also used to do others, such as the counter of the level logs.
 
 
 ## Performance
@@ -169,17 +171,17 @@ func main() {
 The log framework itself has no any performance costs and the key of the bottleneck is the encoder.
 
 ```
-Dell Vostro 3470
-Intel Core i5-7400 3.0GHz
-8GB DDR4 2666MHz
-Windows 10
-Go 1.16.4
+go: 1.17.3
+goos: windows
+goarch: amd64
+cpu: 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
 ```
 
 **Benchmark Package:**
-
-|               Function               |      ops      | ns/op | bytes/opt | allocs/op
-|--------------------------------------|--------------:|------:|-----------|----------
-|BenchmarkNothingEncoder-4             | 261, 674, 554 |   4.5 |     0     |    0
-|BenchmarkJSONEncoderWithoutCtxField-4 |  11, 538, 594 |  98.0 |     0     |    0
-|BenchmarkJSONEncoderWith10CtxFields-4 |   4, 109, 601 | 290.6 |     0     |    0
+|                     Function                     |        ops       | ns/op  | bytes/opt | allocs/op
+|--------------------------------------------------|-----------------:|-------:|-----------|----------
+|BenchmarkLevelDisabled-8                          | 1, 000, 000, 000 |   0.76 |     0     |    0
+|BenchmarkNothingEncoder-8                         |    150, 158, 604 |  11.00 |     0     |    0
+|BenchmarkJSONEncoderWithoutContextsAndKeyValues-8 |     82, 356, 866 |  15.01 |     0     |    0
+|BenchmarkJSONEncoderWith8Contexts-8               |     84, 787, 077 |  14.40 |     0     |    0
+|BenchmarkJSONEncoderWith8KeyValues-8              |     26, 949, 334 |  45.83 |     0     |    0

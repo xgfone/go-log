@@ -13,43 +13,79 @@
 // limitations under the License.
 
 // Package log provides a simple, flexible, extensible, powerful and
-// structured logging tool based on the level, which has done the better balance
-// between the flexibility and the performance.
+// structured logger based on the level, which has done the better balance
+// between the flexibility and the performance. It collects the log message
+// with the key-value contexts, encodes them into the buffer, then writes
+// the encoded log from the buffer into the underlying writer.
 //
 // Features
 //
-//   - The better performance.
-//   - Lazy evaluation of expensive operations.
-//   - Support the level inherited from the parent logger.
+//   - Support `Go1.7+`.
+//   - Compatible with the stdlib `log.Printf`.
+//   - The better performance:
+//       - Lazy evaluation of expensive operations.
+//       - Avoid to allocate the memory on heap as far as possible.
+//       - Encode in real time or pre-encode the key-value contexts into the buffer cache.
 //   - Simple, Flexible, Extensible, Powerful and Structured.
-//   - Avoid to allocate the memory on heap as far as possible.
-//   - Child loggers which inherit and add their own private context.
-//   - Built-in support for logging to files, syslog, etc. See `Writer`.
+//   - Support to customize the log encoder and writer.
+//   - Provide the simple and easy-used api interface.
 //
 // Example
 //
 //   package main
 //
-//   import "github.com/xgfone/go-log"
+//   import (
+//       "errors"
+//       "flag"
+//
+//       "github.com/xgfone/go-log"
+//   )
+//
+//   var logfile string
+//   var loglevel string
+//
+//   func logError(err error, msg string, kvs ...interface{}) {
+//       if err == nil {
+//           return
+//       }
+//       log.Log(log.LvlError, 1).Kvs(kvs...).Kv("err", err).Printf(msg)
+//   }
 //
 //   func main() {
-//       log.DefalutLogger.Level = log.LvlWarn
+//       // Parse the CLI options.
+//       flag.StringVar(&logfile, "logfile", "", "The log file path, default to stderr.")
+//       flag.StringVar(&loglevel, "loglevel", "info", "The log level, such as debug, info, etc.")
+//       flag.Parse()
 //
-//       // Emit the log with the fields.
-//       log.Info("log msg", log.F("key1", "value1"), log.F("key2", "value2"))
-//       log.Error("log msg", log.F("key1", "value1"), log.F("key2", "value2"))
+//       // Configure the logger.
+//       writer := log.FileWriter(logfile, "100M", 100)
+//       log.SetWriter(writer).SetLevel(log.ParseLevel(loglevel))
+//       defer writer.Close()
 //
-//       // Emit the log with key-values
-//       log.Infos("log msg", "key1", "value1", "key2", "value2")
-//       log.Errors("log msg", "key1", "value1", "key2", "value2")
+//       // Emit the log.
+//       log.Print("msg1")
+//       log.Printf("msg%d", 2)
+//       log.Kv("key1", "value1").Print("msg3")
+//       log.Debug().Kv("key2", "value2").Print("msg4") // no log output.
+//       log.Info().Kv("key3", "value3").Print("msg5")
+//       log.Log(log.LvlInfo, 0).Kv("key4", "value4").Printf("msg6")
+//       logError(nil, "msg7", "key5", "value5", "key6", 666, "key7", "value7")
+//       logError(errors.New("error"), "msg8", "key8", 888, "key9", "value9")
 //
-//       // Emit the log with the formatter.
-//       log.Infof("log %s", "msg")
-//       log.Errorf("log %s", "msg")
+//       // For Clild Logger
+//       child1Logger := log.WithName("child1")
+//       child2Logger := child1Logger.New("child2")
+//       child1Logger.Kv("ckey1", "cvalue1").Print("msg9")
+//       child2Logger.Printf("msg10")
 //
-//       // Output:
-//       // {"t":"2021-05-28T22:07:07.394835+08:00","lvl":"ERROR","stack":"[main.go:10]","key1":"value1","key2":"value2","msg":"log msg"}
-//       // {"t":"2021-05-28T22:07:07.395066+08:00","lvl":"ERROR","stack":"[main.go:14]","key1":"value1","key2":"value2","msg":"log msg"}
-//       // {"t":"2021-05-28T22:07:07.3951+08:00","lvl":"ERROR","stack":"[main.go:18]","msg":"log msg"}
+//       // $ go run main.go
+//       // {"t":"2021-12-12T11:41:11.2844234+08:00","lvl":"info","caller":"main.go:32","msg":"msg1"}
+//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:33","msg":"msg2"}
+//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:34","key1":"value1","msg":"msg3"}
+//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:36","key3":"value3","msg":"msg5"}
+//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:37","key4":"value4","msg":"msg6"}
+//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"error","caller":"main.go:39","key8":888,"key9":"value9","err":"error","msg":"msg8"}
+//       // {"t":"2021-12-12T12:22:15.2466635+08:00","lvl":"info","logger":"child1","caller":"main.go:44","ckey1":"cvalue1","msg":"msg9"}
+//       // {"t":"2021-12-12T12:22:15.2466635+08:00","lvl":"info","logger":"child1.child2","caller":"main.go:45","msg":"msg10"}
 //   }
 package log

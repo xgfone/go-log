@@ -17,62 +17,93 @@ package log
 import (
 	"fmt"
 	"strings"
+	"sync/atomic"
 )
+
+var globalLevel = int64(-1)
+
+// SetGlobalLevel sets the global level, which will act on all the logger.
+//
+// If the level is negative, it will unset the global level.
+func SetGlobalLevel(level int) { atomic.StoreInt64(&globalLevel, int64(level)) }
+
+// GetGlobalLevel returns the global level setting.
+func GetGlobalLevel() int { return int(atomic.LoadInt64(&globalLevel)) }
 
 // Predefine some levels.
 const (
-	LvlTrace = Level(0)
-	LvlDebug = Level(50)
-	LvlInfo  = Level(100)
-	LvlWarn  = Level(150)
-	LvlError = Level(200)
-	LvlFatal = Level(255)
+	LvlDisable = int(0)
+	LvlTrace   = int(10)
+	LvlDebug   = int(20)
+	LvlInfo    = int(40)
+	LvlWarn    = int(60)
+	LvlError   = int(80)
+	LvlAlert   = int(100)
+	LvlPanic   = int(120)
+	LvlFatal   = int(127)
 )
 
-// Level is the level of the log.
-type Level uint8
+// FormatLevel is used to format the level to string.
+var FormatLevel func(level int) string = formatLevel
 
-func (l Level) String() string {
-	switch l {
+func formatLevel(level int) string {
+	switch level {
+	case LvlDisable:
+		return "disable"
 	case LvlTrace:
-		return "TRACE"
+		return "trace"
 	case LvlDebug:
-		return "DEBUG"
+		return "debug"
 	case LvlInfo:
-		return "INFO"
+		return "info"
 	case LvlWarn:
-		return "WARN"
+		return "warn"
 	case LvlError:
-		return "ERROR"
+		return "error"
+	case LvlAlert:
+		return "alert"
+	case LvlPanic:
+		return "panic"
 	case LvlFatal:
-		return "FATAL"
+		return "fatal"
 	default:
-		return fmt.Sprintf("LEVEL(%d)", l)
+		if level < 0 {
+			panic(fmt.Errorf("invalid level '%d'", level))
+		}
+		return fmt.Sprintf("Level(%d)", level)
 	}
 }
 
-// NameToLevel returns a Level by the level name.
+// ParseLevel parses a string to the level.
 //
-// Support the level name, which is case insensitive:
-//   TRACE
-//   DEBUG
-//   INFO
-//   WARN
-//   ERROR
-//   FATAL
-func NameToLevel(level string, defaultLevel ...Level) Level {
-	switch strings.ToUpper(level) {
-	case "TRACE":
+// Support the level string as follow, which is case insensitive:
+//
+//   trace
+//   debug
+//   info
+//   warn
+//   error
+//   alert
+//   panic
+//   fatal
+//
+func ParseLevel(level string, defaultLevel ...int) int {
+	switch strings.ToLower(level) {
+	case "trace", "T":
 		return LvlTrace
-	case "DEBUG":
+	case "debug", "D":
 		return LvlDebug
-	case "INFO":
+	case "info", "I":
 		return LvlInfo
-	case "WARN":
+	case "warn", "W":
 		return LvlWarn
-	case "ERROR":
+	case "error", "E":
 		return LvlError
-	case "FATAL":
+	case "alert", "A":
+		return LvlAlert
+	case "panic", "P":
+		return LvlPanic
+	case "fatal", "F":
 		return LvlFatal
 	default:
 		if len(defaultLevel) > 0 {

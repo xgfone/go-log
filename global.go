@@ -14,142 +14,148 @@
 
 package log
 
+import (
+	"io"
+	"log"
+)
+
 // DefaultLogger is the default global logger.
-var DefaultLogger = New("root")
+var DefaultLogger = New("").AddHooks(Caller("caller"))
 
-// GetLevel is equal to DefaultLogger.GetLevel() to return the level
-// of the default logger.
-func GetLevel() Level { return DefaultLogger.GetLevel() }
-
-// SetLevel is equal to DefaultLogger.SetLevel(level) to reset the level
-// of the default logger.
-func SetLevel(level Level) { DefaultLogger.SetLevel(level) }
-
-// WithCtx is equal to DefaultLogger.WithCtx(fields...).
-func WithCtx(fields ...Field) *Logger { return DefaultLogger.WithCtx(fields...) }
-
-// WithName is equal to DefaultLogger.WithName(name).
-func WithName(name string) *Logger { return DefaultLogger.WithName(name) }
-
-// WithLevel is equal to DefaultLogger.WithLevel(level).
-func WithLevel(level Level) *Logger { return DefaultLogger.WithLevel(level) }
-
-// WithEncoder is equal to DefaultLogger.WithEncoder(enc).
-func WithEncoder(enc Encoder) *Logger { return DefaultLogger.WithEncoder(enc) }
-
-// WithDepth is equal to DefaultLogger.WithDepth(depth).
-func WithDepth(depth int) *Logger { return DefaultLogger.WithDepth(depth) }
-
-// Trace is equal to DefaultLogger.Trace(msg, fields...).
-func Trace(msg string, fields ...Field) {
-	DefaultLogger.Log(LvlTrace, 1, msg, nil, fields)
+// StdLog is equal to DefaultLogger.StdLog(prefix).
+func StdLog(prefix string) *log.Logger {
+	return log.New(DefaultLogger.Clone().SetDepth(2), prefix, 0)
 }
 
-// Debug is equal to DefaultLogger.Debug(msg, fields...).
-func Debug(msg string, fields ...Field) {
-	DefaultLogger.Log(LvlDebug, 1, msg, nil, fields)
+// GetLevel is equal to DefaultLogger.GetLevel().
+func GetLevel() int { return DefaultLogger.GetLevel() }
+
+// SetDepth is equal to DefaultLogger.SetDepth(depth).
+func SetDepth(depth int) *Engine { return DefaultLogger.SetDepth(depth) }
+
+// SetLevel is equal to DefaultLogger.SetLevel(level).
+func SetLevel(level int) *Engine { return DefaultLogger.SetLevel(level) }
+
+// SetWriter is eqaul to DefaultLogger.SetWriter(w).
+func SetWriter(w io.Writer) *Engine { return DefaultLogger.SetWriter(w) }
+
+// SetEncoder is eqaul to DefaultLogger.SetEncoder(enc).
+func SetEncoder(enc Encoder) *Engine { return DefaultLogger.SetEncoder(enc) }
+
+// AddHooks is equal to DefaultLogger.AddHooks(hooks...).
+func AddHooks(hooks ...Hook) *Engine { return DefaultLogger.AddHooks(hooks...) }
+
+// ResetHooks is equal to DefaultLogger.ResetHooks(hooks...).
+func ResetHooks(hooks ...Hook) *Engine { return DefaultLogger.ResetHooks(hooks...) }
+
+// ResetCtxs is equal to DefaultLogger.ResetCtxs().
+func ResetCtxs() *Engine { return DefaultLogger.ResetCtxs() }
+
+// AppendCtx is equal to DefaultLogger.AppendCtx(key, value).
+func AppendCtx(key string, value interface{}) *Engine {
+	return DefaultLogger.AppendCtx(key, value)
 }
 
-// Info is equal to DefaultLogger.Info(msg, fields...).
-func Info(msg string, fields ...Field) {
-	DefaultLogger.Log(LvlInfo, 1, msg, nil, fields)
-}
+// Clone is equal to DefaultLogger.Clone().
+func Clone() *Engine { return DefaultLogger.Clone() }
 
-// Warn is equal to DefaultLogger.Warn(msg, fields...).
-func Warn(msg string, fields ...Field) {
-	DefaultLogger.Log(LvlWarn, 1, msg, nil, fields)
-}
+// WithName is equal to DefaultLogger.New(name).
+func WithName(name string) *Engine { return DefaultLogger.New(name) }
 
-// Error is equal to DefaultLogger.Error(msg, fields...).
-func Error(msg string, fields ...Field) {
-	DefaultLogger.Log(LvlError, 1, msg, nil, fields)
-}
+// Log is equal to DefaultLogger.Logger(level, depth).
+func Log(level, depth int) Logger { return DefaultLogger.Logger(level, depth+1) }
 
-// Fatal is equal to DefaultLogger.Fatal(msg, fields...).
-func Fatal(msg string, fields ...Field) {
-	DefaultLogger.Log(LvlFatal, 1, msg, nil, fields)
-}
+// Trace is equal to DefaultLogger.Trace().
+func Trace() Logger { return DefaultLogger.Logger(LvlTrace, 1) }
 
-// Traces is equal to DefaultLogger.Traces.
-func Traces(msg string, keyAndValues ...interface{}) {
-	DefaultLogger.logs(LvlTrace, 1, msg, keyAndValues)
-}
+// Debug is equal to DefaultLogger.Debug().
+func Debug() Logger { return DefaultLogger.Logger(LvlDebug, 1) }
 
-// Debugs is equal to DefaultLogger.Debugs.
-func Debugs(msg string, keyAndValues ...interface{}) {
-	DefaultLogger.logs(LvlDebug, 1, msg, keyAndValues)
-}
+// Info is equal to DefaultLogger.Info().
+func Info() Logger { return DefaultLogger.Logger(LvlInfo, 1) }
 
-// Infos is equal to DefaultLogger.Infos.
-func Infos(msg string, keyAndValues ...interface{}) {
-	DefaultLogger.logs(LvlInfo, 1, msg, keyAndValues)
-}
+// Warn is equal to DefaultLogger.Warn().
+func Warn() Logger { return DefaultLogger.Logger(LvlWarn, 1) }
 
-// Warns is equal to DefaultLogger.Warns.
-func Warns(msg string, keyAndValues ...interface{}) {
-	DefaultLogger.logs(LvlWarn, 1, msg, keyAndValues)
-}
+// Error is equal to DefaultLogger.Error().
+func Error() Logger { return DefaultLogger.Logger(LvlError, 1) }
 
-// Errors equal to DefaultLogger.Errors.
-func Errors(msg string, keyAndValues ...interface{}) {
-	DefaultLogger.logs(LvlError, 1, msg, keyAndValues)
-}
+// Panic is equal to DefaultLogger.Panic().
+func Panic() Logger { return DefaultLogger.Logger(LvlPanic, 1) }
 
-// Fatals is equal to DefaultLogger.Fatals.
-func Fatals(msg string, keyAndValues ...interface{}) {
-	DefaultLogger.logs(LvlFatal, 1, msg, keyAndValues)
-}
+// Fatal is equal to DefaultLogger.Fatal().
+func Fatal() Logger { return DefaultLogger.Logger(LvlFatal, 1) }
 
-// Tracef is equal to DefaultLogger.Tracef(msg, args...).
+// Tracef is equal to DefaultLogger.Trace().Printf(msg, args...).
 func Tracef(msg string, args ...interface{}) {
-	DefaultLogger.Log(LvlTrace, 1, msg, args, nil)
+	DefaultLogger.Logger(LvlTrace, 1).Printf(msg, args...)
 }
 
-// Debugf is equal to DefaultLogger.Debugf(msg, args...).
+// Debugf is equal to DefaultLogger.Debug().Printf(msg, args...).
 func Debugf(msg string, args ...interface{}) {
-	DefaultLogger.Log(LvlDebug, 1, msg, args, nil)
+	DefaultLogger.Logger(LvlDebug, 1).Printf(msg, args...)
 }
 
-// Infof is equal to DefaultLogger.Infof(msg, args...).
+// Infof is equal to DefaultLogger.Info().Printf(msg, args...).
 func Infof(msg string, args ...interface{}) {
-	DefaultLogger.Log(LvlInfo, 1, msg, args, nil)
+	DefaultLogger.Logger(LvlInfo, 1).Printf(msg, args...)
 }
 
-// Warnf is equal to DefaultLogger.Warnf(msg, args...).
+// Warnf is equal to DefaultLogger.Warn().Printf(msg, args...).
 func Warnf(msg string, args ...interface{}) {
-	DefaultLogger.Log(LvlWarn, 1, msg, args, nil)
+	DefaultLogger.Logger(LvlWarn, 1).Printf(msg, args...)
 }
 
-// Errorf is equal to DefaultLogger.Errorf(msg, args...).
+// Errorf is equal to DefaultLogger.Error().Printf(msg, args...).
 func Errorf(msg string, args ...interface{}) {
-	DefaultLogger.Log(LvlError, 1, msg, args, nil)
+	DefaultLogger.Logger(LvlError, 1).Printf(msg, args...)
 }
 
-// Fatalf is equal to DefaultLogger.Fatalf(msg, args...).
+// Panicf is equal to DefaultLogger.Panic().Printf(msg, args...).
+func Panicf(msg string, args ...interface{}) {
+	DefaultLogger.Logger(LvlPanic, 1).Printf(msg, args...)
+}
+
+// Fatalf is equal to DefaultLogger.Fatal().Printf(msg, args...).
 func Fatalf(msg string, args ...interface{}) {
-	DefaultLogger.Log(LvlFatal, 1, msg, args, nil)
+	DefaultLogger.Logger(LvlFatal, 1).Printf(msg, args...)
 }
 
-// Printf is equal to DefaultLogger.Infof(msg, args...).
+// Kv is equal to DefaultLogger.Kv(key, value).
+func Kv(key string, value interface{}) Logger {
+	return DefaultLogger.Logger(DefaultLogger.level, 1).Kv(key, value)
+}
+
+// Kvs is equal to DefaultLogger.Kvs(key, value).
+func Kvs(kvs ...interface{}) Logger {
+	return DefaultLogger.Logger(DefaultLogger.level, 1).Kvs(kvs...)
+}
+
+// Printf is equal to DefaultLogger.Printf(msg, args...).
 func Printf(msg string, args ...interface{}) {
-	DefaultLogger.Log(LvlInfo, 1, msg, args, nil)
+	DefaultLogger.Logger(DefaultLogger.level, 1).Printf(msg, args...)
 }
 
-// Ef is equal to DefaultLogger.Error(fmt.Sprintf(msg, args), E(err)).
-func Ef(err error, format string, args ...interface{}) {
-	DefaultLogger.Log(LvlError, 1, format, args, []Field{E(err)})
+// Print is equal to DefaultLogger.Print(msg, args...).
+func Print(args ...interface{}) {
+	DefaultLogger.Logger(DefaultLogger.level, 1).Print(args...)
 }
 
-// IfErr logs the message and fields with the ERROR level
+// Ef is equal to DefaultLogger.Error().Kv("err", err).Printf(msg, args...).
+func Ef(err error, msg string, args ...interface{}) {
+	DefaultLogger.Logger(LvlError, 1).Kv("err", err).Printf(msg, args...)
+}
+
+// IfErr logs the message and key-values with the ERROR level
 // only if err is not equal to nil.
-func IfErr(err error, msg string, fields ...Field) {
-	if err != nil {
-		if len(fields) == 0 {
-			fields = []Field{E(err)}
-		} else {
-			fields = append(fields, E(err))
-		}
+func IfErr(err error, msg string, kvs ...interface{}) { ifErr(err, msg, kvs...) }
 
-		DefaultLogger.Log(LvlError, 1, msg, nil, fields)
+// WrapPanic wraps and logs the panic.
+func WrapPanic(kvs ...interface{}) { ifErr(recover(), "panic", kvs...) }
+
+func ifErr(err interface{}, msg string, kvs ...interface{}) {
+	if err == nil {
+		return
 	}
+	DefaultLogger.Logger(LvlError, 2).Kvs(kvs...).Kv("err", err).Printf(msg)
 }

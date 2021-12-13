@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !go1.12
+//go:build !go1.16
+// +build !go1.16
 
-package log
+package writer
 
-func init() { fixDepth = func(depth int) int { return depth + 1 } }
+func init() { Discard = discard{} }
+
+type discard struct{}
+
+func (discard) Write(p []byte) (int, error)       { return len(p), nil }
+func (discard) WriteString(s string) (int, error) { return len(s), nil }

@@ -15,257 +15,169 @@
 package log
 
 import (
-	"errors"
 	"fmt"
-	"log"
-	"os"
-	"strings"
-	"sync/atomic"
+	"sync"
 
 	"github.com/xgfone/go-atexit"
 )
 
-var fixDepth = func(depth int) int { return depth }
-
-// Logger is a logger implementation.
-type Logger struct {
-	Name     string
-	Ctxs     []Field
-	Depth    int
-	Encoder  Encoder
-	ExitCode int
-
-	level  int32
-	logger *Logger
+// LevelLogger is the logger interface with the level to emit the log.
+type LevelLogger interface {
+	Level(level int) Logger
+	Logger
 }
 
-// New creates a new root Logger, which has no parent logger,
-// to encode the log record as JSON and output the log to os.Stdout.
-func New(name string) *Logger {
-	ctxs := []Field{CallerStack("stack", true)}
-	encoder := NewJSONEncoder(SafeWriter(StreamWriter(os.Stdout)))
-	return &Logger{
-		Name:     name,
-		Ctxs:     ctxs,
-		level:    int32(LvlDebug),
-		Encoder:  encoder,
-		ExitCode: 1,
+// Logger is the logger interface to emit the log.
+type Logger interface {
+	// Enabled reports whether the logger is enabled.
+	Enabled() bool
+
+	// Kv and Kvs append the key-value contexts and return the logger itself.
+	Kv(key string, value interface{}) Logger
+	Kvs(kvs ...interface{}) Logger
+
+	// Print and Printf log the message and end the logger.
+	Printf(msg string, args ...interface{})
+	Print(args ...interface{})
+}
+
+type logger struct {
+	writer  LevelWriter
+	encoder Encoder
+	buffer  []byte
+	level   int
+}
+
+func (l *logger) Enabled() bool { return l != nil }
+
+func (l *logger) Kv(key string, value interface{}) Logger {
+	if l != nil {
+		l.buffer = l.encoder.Encode(l.buffer, key, value)
 	}
+	return l
 }
 
-// NewSimpleLogger returns a new simple logger.
-func NewSimpleLogger(name, level, filepath, filesize string, filenum int) *Logger {
-	log := New(name)
-	log.level = int32(NameToLevel(level))
-	if filepath != "" {
-		log.Encoder.SetWriter(SafeWriter(FileWriter(filepath, filesize, filenum)))
+func (l *logger) Kvs(kvs ...interface{}) Logger {
+	if l != nil {
+		_len := len(kvs)
+		if _len%2 != 0 {
+			panic("the length of the key-value log contexts is not even")
+		}
+		for i := 0; i < _len; i += 2 {
+			l.Kv(kvs[i].(string), kvs[i+1])
+		}
 	}
-	return log
+	return l
 }
 
-// GetParent returns the parent logger of the current logger.
-//
-// If there is no parent logger, return nil.
-func (l *Logger) GetParent() *Logger { return l.logger }
-
-// GetLevel returns the level thread-safety, which will return the level
-// of the parent logger if the current logger does not set the level.
-func (l *Logger) GetLevel() Level {
-	if level := atomic.LoadInt32(&l.level); level >= 0 {
-		return Level(level)
-	} else if l.logger != nil {
-		return l.logger.GetLevel()
-	}
-	panic(fmt.Errorf("the logger named '%s' does not set the level", l.Name))
-}
-
-// SetLevel resets the level thread-safety.
-func (l *Logger) SetLevel(level Level) {
-	atomic.StoreInt32(&l.level, int32(level))
-}
-
-// UnsetLevel unsets the level to inherit the level of the parent logger.
-//
-// Notice: The current logger must has the parent logger. Or panic.
-func (l *Logger) UnsetLevel() {
-	if l.logger == nil {
-		panic(fmt.Errorf("the logger named '%s has no parent logger", l.Name))
-	}
-	atomic.StoreInt32(&l.level, -1)
-}
-
-// StdLog converts the Logger to the std log.
-func (l *Logger) StdLog(prefix string, flags ...int) *log.Logger {
-	flag := log.LstdFlags | log.Lmicroseconds | log.Lshortfile
-	if len(flags) > 0 {
-		flag = flags[0]
-	}
-	return log.New(NewIOWriter(l.Encoder.Writer(), l.GetLevel()), prefix, flag)
-}
-
-// New clones itself as the parent and returns a new one as the child.
-func (l *Logger) New() *Logger {
-	var ctxs []Field
-	if len(l.Ctxs) != 0 {
-		ctxs = append([]Field{}, l.Ctxs...)
-	}
-
-	logger := &Logger{
-		Ctxs:     ctxs,
-		Name:     l.Name,
-		Depth:    l.Depth,
-		Encoder:  l.Encoder,
-		ExitCode: l.ExitCode,
-		logger:   l,
-		level:    -1,
-	}
-	return logger
-}
-
-// WithName returns a new Logger with the new sub-name, that's,
-// use l.Name+"."+name as the full name of the new child logger.
-func (l *Logger) WithName(name string) *Logger {
-	ll := l.New()
-	ll.Name = strings.Join([]string{ll.Name, name}, ".")
-	return ll
-}
-
-// WithLevel returns a new Logger with the new level.
-func (l *Logger) WithLevel(level Level) *Logger {
-	ll := l.New()
-	ll.SetLevel(level)
-	return ll
-}
-
-// WithEncoder returns a new Logger with the new encoder.
-func (l *Logger) WithEncoder(e Encoder) *Logger {
-	ll := l.New()
-	ll.Encoder = e
-	return ll
-}
-
-// WithDepth returns a new Logger, which will increase the depth.
-func (l *Logger) WithDepth(depth int) *Logger {
-	ll := l.New()
-	ll.Depth += depth
-	return ll
-}
-
-// WithCtx returns a new Logger with the new context fields.
-func (l *Logger) WithCtx(ctxs ...Field) *Logger {
-	ll := l.New()
-	ll.Ctxs = append(ll.Ctxs, ctxs...)
-	return ll
-}
-
-// Log emits the logs with the level and the depth.
-//
-// If lvl is equal to LvlFatal, the program exits with ExitCode.
-func (l *Logger) Log(lvl Level, depth int, msgfmt string, msgargs []interface{},
-	fields []Field) {
-	if lvl < l.GetLevel() {
+func (l *logger) Print(args ...interface{}) {
+	if l == nil {
 		return
 	}
 
-	if len(msgargs) != 0 {
-		msgfmt = fmt.Sprintf(msgfmt, msgargs...)
+	l.emit(fmt.Sprint(args...))
+}
+
+func (l *logger) Printf(msg string, args ...interface{}) {
+	if l == nil {
+		return
 	}
 
-	l.Encoder.Encode(Record{
-		Name:   l.Name,
-		Depth:  l.Depth + 1 + fixDepth(depth),
-		Lvl:    lvl,
-		Msg:    msgfmt,
-		Ctxs:   l.Ctxs,
-		Fields: fields,
-	})
-
-	if lvl == LvlFatal {
-		atexit.Exit(l.ExitCode)
+	if len(args) == 0 {
+		l.emit(msg)
+	} else {
+		l.emit(fmt.Sprintf(msg, args...))
 	}
 }
 
-// Trace is equal to Log(LvlTrace, 1, msg, nil, fields).
-func (l *Logger) Trace(msg string, fields ...Field) { l.Log(LvlTrace, 1, msg, nil, fields) }
+func (l *logger) emit(msg string) {
+	l.buffer = l.encoder.End(l.buffer, msg)
+	l.writer.WriteLevel(l.level, l.buffer)
+	l.buffer = l.buffer[:0]
+	loggerPool.Put(l)
 
-// Debug is equal to Log(LvlDebug, 1, msg, nil, fields).
-func (l *Logger) Debug(msg string, fields ...Field) { l.Log(LvlDebug, 1, msg, nil, fields) }
+	if l.level == LvlFatal {
+		atexit.Exit(1)
+	} else if l.level >= LvlPanic {
+		panic(msg)
+	}
+}
 
-// Info is equal to Log(LvlInfo, 1, msg, nil, fields).
-func (l *Logger) Info(msg string, fields ...Field) { l.Log(LvlInfo, 1, msg, nil, fields) }
+// DefaultBufferCap is the default capacity of the buffer to encode the log.
+var DefaultBufferCap = 256
 
-// Warn is equal to Log(LvlWarn, 1, msg, nil, fields).
-func (l *Logger) Warn(msg string, fields ...Field) { l.Log(LvlWarn, 1, msg, nil, fields) }
+var loggerPool = sync.Pool{New: func() interface{} {
+	return &logger{buffer: make([]byte, 0, DefaultBufferCap)}
+}}
 
-// Error is equal to Log(LvlError, 1, msg, nil, fields).
-func (l *Logger) Error(msg string, fields ...Field) { l.Log(LvlError, 1, msg, nil, fields) }
-
-// Fatal is equal to Log(LvlFatal, 1, msg, nil, fields).
-func (l *Logger) Fatal(msg string, fields ...Field) { l.Log(LvlFatal, 1, msg, nil, fields) }
-
-// Tracef is equal to Log(LvlTrace, 1, msg, args, nil).
-func (l *Logger) Tracef(msg string, args ...interface{}) { l.Log(LvlTrace, 1, msg, args, nil) }
-
-// Debugf is equal to Log(LvlDebug, 1, msg, args, nil).
-func (l *Logger) Debugf(msg string, args ...interface{}) { l.Log(LvlDebug, 1, msg, args, nil) }
-
-// Infof is equal to Log(LvlInfo, 1, msg, args, nil).
-func (l *Logger) Infof(msg string, args ...interface{}) { l.Log(LvlInfo, 1, msg, args, nil) }
-
-// Warnf is equal to Log(LvlWarn, 1, msg, args, nil).
-func (l *Logger) Warnf(msg string, args ...interface{}) { l.Log(LvlWarn, 1, msg, args, nil) }
-
-// Errorf is equal to Log(LvlError, 1, msg, args, nil).
-func (l *Logger) Errorf(msg string, args ...interface{}) { l.Log(LvlError, 1, msg, args, nil) }
-
-// Fatalf is equal to Log(LvlFatal, 1, msg, args, nil).
-func (l *Logger) Fatalf(msg string, args ...interface{}) { l.Log(LvlFatal, 1, msg, args, nil) }
-
-// Printf is equal to Infof(msg, args...).
-func (l *Logger) Printf(msg string, args ...interface{}) { l.Log(LvlInfo, 1, msg, args, nil) }
-
-func (l *Logger) logs(lvl Level, depth int, msg string, keyAndValues []interface{}) {
-	_len := len(keyAndValues)
-	if _len%2 != 0 {
-		panic(errors.New("Logger: the number of keyAndValues is not even"))
+func newLogger(engine *Engine, level int, depth int) *logger {
+	if engine.isDisabled(level) {
+		return nil
 	}
 
-	_len /= 2
-	fields := make([]Field, _len)
-	for i := 0; i < _len; i++ {
-		j := i * 2
-		fields[i] = F(keyAndValues[j].(string), keyAndValues[j+1])
+	l := loggerPool.Get().(*logger)
+	l.level = level
+	l.writer = engine.Output.writer
+	l.encoder = engine.Output.encoder
+
+	l.buffer = l.encoder.Start(l.buffer, engine.name, l.level)
+	l.buffer = append(l.buffer, engine.ctx...)
+	for i, _len := 0, len(engine.hooks); i < _len; i++ {
+		engine.hooks[i].Run(l, engine.name, level, depth+2)
 	}
 
-	l.Log(lvl, depth+1, msg, nil, fields)
+	return l
 }
 
-// Traces is the same as Trace, but convert keyAndValues to []Field.
-func (l *Logger) Traces(msg string, keyAndValues ...interface{}) {
-	l.logs(LvlTrace, 1, msg, keyAndValues)
+var _ LevelLogger = &Engine{}
+
+// Kv implements the interface Logger.
+func (e *Engine) Kv(key string, value interface{}) Logger {
+	return newLogger(e, e.level, e.depth).Kv(key, value)
 }
 
-// Debugs is the same as Debug, but convert keyAndValues to []Field.
-func (l *Logger) Debugs(msg string, keyAndValues ...interface{}) {
-	l.logs(LvlDebug, 1, msg, keyAndValues)
+// Kvs implements the interface Logger.
+func (e *Engine) Kvs(kvs ...interface{}) Logger {
+	return newLogger(e, e.level, e.depth).Kvs(kvs...)
 }
 
-// Infos is the same as Info, but convert keyAndValues to []Field.
-func (l *Logger) Infos(msg string, keyAndValues ...interface{}) {
-	l.logs(LvlInfo, 1, msg, keyAndValues)
+// Print implements the interface Logger.
+func (e *Engine) Print(args ...interface{}) {
+	newLogger(e, e.level, e.depth).Print(args...)
 }
 
-// Warns is the same as Warn, but convert keyAndValues to []Field.
-func (l *Logger) Warns(msg string, keyAndValues ...interface{}) {
-	l.logs(LvlWarn, 1, msg, keyAndValues)
+// Printf implements the interface Logger.
+func (e *Engine) Printf(msg string, args ...interface{}) {
+	newLogger(e, e.level, e.depth).Printf(msg, args...)
 }
 
-// Errors is the same as Error, but convert keyAndValues to []Field.
-func (l *Logger) Errors(msg string, keyAndValues ...interface{}) {
-	l.logs(LvlError, 1, msg, keyAndValues)
+// Logger returns a logger with the level and the additional stack depth
+// to emit the log.
+func (e *Engine) Logger(level, depth int) Logger {
+	return newLogger(e, level, e.depth+depth)
 }
 
-// Fatals is the same as Fatal, but convert keyAndValues to []Field.
-func (l *Logger) Fatals(msg string, keyAndValues ...interface{}) {
-	l.logs(LvlFatal, 1, msg, keyAndValues)
-}
+// Level implements the interface LevelLogger to emit the log based on the level,
+// which is equal to e.Logger(level, 0).
+func (e *Engine) Level(level int) Logger { return newLogger(e, level, e.depth) }
+
+// Trace is equal to e.Level(LvlTrace).
+func (e *Engine) Trace() Logger { return newLogger(e, LvlTrace, e.depth) }
+
+// Debug is equal to e.Level(LvlDebug).
+func (e *Engine) Debug() Logger { return newLogger(e, LvlDebug, e.depth) }
+
+// Info is equal to e.Level(LvlInfo).
+func (e *Engine) Info() Logger { return newLogger(e, LvlInfo, e.depth) }
+
+// Warn is equal to e.Level(LvlWarn).
+func (e *Engine) Warn() Logger { return newLogger(e, LvlWarn, e.depth) }
+
+// Error is equal to e.Level(LvlError).
+func (e *Engine) Error() Logger { return newLogger(e, LvlError, e.depth) }
+
+// Panic is equal to e.Panic(LvlPanic).
+func (e *Engine) Panic() Logger { return newLogger(e, LvlPanic, e.depth) }
+
+// Fatal is equal to e.Level(LvlFatal).
+func (e *Engine) Fatal() Logger { return newLogger(e, LvlFatal, e.depth) }
