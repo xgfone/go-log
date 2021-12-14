@@ -184,6 +184,9 @@ func (e *Engine) Warn() Logger { return newLogger(e, LvlWarn, e.depth) }
 // Error is equal to e.Level(LvlError).
 func (e *Engine) Error() Logger { return newLogger(e, LvlError, e.depth) }
 
+// Alert is equal to e.Level(LvlAlert).
+func (e *Engine) Alert() Logger { return newLogger(e, LvlAlert, e.depth) }
+
 // Panic is equal to e.Panic(LvlPanic).
 func (e *Engine) Panic() Logger { return newLogger(e, LvlPanic, e.depth) }
 

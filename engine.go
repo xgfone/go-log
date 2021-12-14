@@ -144,7 +144,18 @@ func (e *Engine) GetLevel() int { return e.level }
 // the global level.
 //
 // Notice: if the global level is not set, it is equal to be enabled.
-func (e *Engine) Enabled() bool { return e.Enable(e.level) }
+func (e *Engine) Enabled() bool {
+	if e.level == LvlDisable {
+		return false
+	}
+
+	global := GetGlobalLevel()
+	if global < LvlTrace {
+		return true
+	}
+
+	return e.level >= global
+}
 
 // Enable reports whether the given level is enabled.
 func (e *Engine) Enable(level int) bool {
@@ -153,14 +164,19 @@ func (e *Engine) Enable(level int) bool {
 }
 
 func (e *Engine) isDisabled(level int) bool {
-	if global := GetGlobalLevel(); global >= LvlDisable {
-		return e.disabled(level, global)
+	if level == LvlDisable {
+		return true
 	}
-	return e.disabled(level, e.level)
+
+	global := GetGlobalLevel()
+	if global < LvlTrace {
+		return e.disabled(level, e.level)
+	}
+	return e.disabled(level, global)
 }
 
 func (e *Engine) disabled(logLevel, minThresholdLevel int) bool {
-	if minThresholdLevel == LvlDisable || logLevel < minThresholdLevel {
+	if logLevel < minThresholdLevel {
 		return true
 	}
 

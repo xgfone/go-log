@@ -80,6 +80,9 @@ func Warn() Logger { return DefaultLogger.getLogger(LvlWarn, 1) }
 // Error is equal to DefaultLogger.Error().
 func Error() Logger { return DefaultLogger.getLogger(LvlError, 1) }
 
+// Alert is equal to DefaultLogger.Alert()).
+func Alert() Logger { return DefaultLogger.getLogger(LvlAlert, 1) }
+
 // Panic is equal to DefaultLogger.Panic().
 func Panic() Logger { return DefaultLogger.getLogger(LvlPanic, 1) }
 
@@ -109,6 +112,11 @@ func Warnf(msg string, args ...interface{}) {
 // Errorf is equal to DefaultLogger.Error().Printf(msg, args...).
 func Errorf(msg string, args ...interface{}) {
 	DefaultLogger.getLogger(LvlError, 1).Printf(msg, args...)
+}
+
+// Alertf is equal to DefaultLogger.Alert().Printf(msg, args...).
+func Alertf(msg string, args ...interface{}) {
+	DefaultLogger.getLogger(LvlAlert, 1).Printf(msg, args...)
 }
 
 // Panicf is equal to DefaultLogger.Panic().Printf(msg, args...).

@@ -171,6 +171,7 @@ Not only the lazy evaluation, but the hook is also used to do others, such as th
 The log framework itself has no any performance costs and the key of the bottleneck is the encoder.
 
 ```
+HP Laptop 14s-dr2014TU
 go: 1.17.3
 goos: windows
 goarch: amd64

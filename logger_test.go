@@ -171,6 +171,44 @@ func TestChildLoggerName(t *testing.T) {
 	}
 }
 
+func TestLevelDisable(t *testing.T) {
+	enc := NewJSONEncoder()
+	enc.TimeKey = ""
+	buf := bytes.NewBuffer(nil)
+	logger := New("").SetWriter(buf).SetEncoder(enc)
+
+	logger.SetLevel(LvlDisable)
+	logger.Trace().Print("msg1")
+	logger.Debug().Print("msg2")
+	logger.Info().Print("msg3")
+	logger.Warn().Print("msg4")
+	logger.Error().Print("msg5")
+	logger.Alert().Print("msg6")
+	logger.Panic().Print("msg7")
+	logger.Fatal().Print("msg8")
+	if s := buf.String(); s != "" {
+		t.Errorf("unexpected logs '%s'", s)
+	}
+
+	logger.SetLevel(LvlTrace)
+	global := GetGlobalLevel()
+	defer SetGlobalLevel(global)
+	SetGlobalLevel(LvlDisable)
+
+	buf.Reset()
+	logger.Trace().Print("msg1")
+	logger.Debug().Print("msg2")
+	logger.Info().Print("msg3")
+	logger.Warn().Print("msg4")
+	logger.Error().Print("msg5")
+	logger.Alert().Print("msg6")
+	logger.Panic().Print("msg7")
+	logger.Fatal().Print("msg8")
+	if s := buf.String(); s != "" {
+		t.Errorf("unexpected logs '%s'", s)
+	}
+}
+
 func TestLoggerSampler(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	sample := func(name string, lvl int) bool { return lvl > LvlWarn }

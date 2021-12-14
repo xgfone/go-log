@@ -22,20 +22,20 @@ import (
 
 // Predefine some levels.
 const (
-	LvlDisable = int(0)
-	LvlTrace   = int(10)
+	LvlTrace   = int(0)
 	LvlDebug   = int(20)
 	LvlInfo    = int(40)
 	LvlWarn    = int(60)
 	LvlError   = int(80)
 	LvlAlert   = int(100)
 	LvlPanic   = int(120)
-	LvlFatal   = int(127)
+	LvlFatal   = int(126)
+	LvlDisable = int(127)
 )
 
-// LevelIsValid reports whether the level is valid.
+// LevelIsValid reports whether the level is valid, that's, [LvlTrace, LvlDisable].
 func LevelIsValid(level int) bool {
-	return LvlFatal >= level && level >= LvlDisable
+	return LvlTrace <= level && level <= LvlDisable
 }
 
 func checkLevel(level int) {
@@ -50,7 +50,7 @@ var globalLevel = int64(-1)
 //
 // If the level is negative, it will unset the global level.
 func SetGlobalLevel(level int) {
-	if level >= LvlDisable {
+	if level >= LvlTrace {
 		checkLevel(level)
 	}
 	atomic.StoreInt64(&globalLevel, int64(level))
@@ -67,8 +67,6 @@ var FormatLevel func(level int) string = formatLevel
 
 func formatLevel(level int) string {
 	switch level {
-	case LvlDisable:
-		return "disable"
 	case LvlTrace:
 		return "trace"
 	case LvlDebug:
@@ -85,6 +83,8 @@ func formatLevel(level int) string {
 		return "panic"
 	case LvlFatal:
 		return "fatal"
+	case LvlDisable:
+		return "disable"
 	default:
 		checkLevel(level)
 		return fmt.Sprintf("Level(%d)", level)
@@ -103,25 +103,28 @@ func formatLevel(level int) string {
 //   alert
 //   panic
 //   fatal
+//   disable
 //
 func ParseLevel(level string, defaultLevel ...int) int {
 	switch strings.ToLower(level) {
-	case "trace", "T":
+	case "trace":
 		return LvlTrace
-	case "debug", "D":
+	case "debug":
 		return LvlDebug
-	case "info", "I":
+	case "info":
 		return LvlInfo
-	case "warn", "W":
+	case "warn":
 		return LvlWarn
-	case "error", "E":
+	case "error":
 		return LvlError
-	case "alert", "A":
+	case "alert":
 		return LvlAlert
-	case "panic", "P":
+	case "panic":
 		return LvlPanic
-	case "fatal", "F":
+	case "fatal":
 		return LvlFatal
+	case "disable":
+		return LvlDisable
 	default:
 		if len(defaultLevel) == 0 {
 			panic(fmt.Errorf("unknown level '%s'", level))
