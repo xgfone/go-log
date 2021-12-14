@@ -196,9 +196,7 @@ func TestLogger(t *testing.T) {
 	logger.Output.GetEncoder().(*JSONEncoder).TimeKey = ""
 	logger.SetWriter(buf)
 
-	logger.Info().
-		Kv("nil", nil).
-		Kv("bool", true).
+	logger.Info().Kvs("nil", nil, "bool", true).
 		Kv("int", 10).
 		Kv("int8", 11).
 		Kv("int16", 12).

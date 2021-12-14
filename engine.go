@@ -169,9 +169,21 @@ func (e *Engine) SetWriter(w io.Writer) *Engine {
 	return e
 }
 
-// ResetCtxs resets the key-value contexts and returns itself.
-func (e *Engine) ResetCtxs() *Engine {
-	e.ctx, e.origs = nil, nil
+// ResetCtxs resets the key-value contexts to kvs and returns itself.
+func (e *Engine) ResetCtxs(kvs ...interface{}) *Engine {
+	e.ctx, e.origs = e.ctx[:0], e.origs[:0]
+	return e.AppendCtxs(kvs...)
+}
+
+// AppendCtxs appends a set of the key-value contexts and returns itself.
+func (e *Engine) AppendCtxs(kvs ...interface{}) *Engine {
+	_len := len(kvs)
+	if _len%2 != 0 {
+		panic("the length of the key-value log contexts is not even")
+	}
+	for i := 0; i < _len; i += 2 {
+		e.AppendCtx(kvs[i].(string), kvs[i+1])
+	}
 	return e
 }
 
@@ -184,7 +196,7 @@ func (e *Engine) AppendCtx(key string, value interface{}) *Engine {
 
 // EncodeCtxs re-pre-encodes all the key-value contexts.
 func (e *Engine) EncodeCtxs() {
-	e.ctx = nil
+	e.ctx = e.ctx[:0]
 	for _, kv := range e.origs {
 		e.ctx = e.Output.encoder.Encode(e.ctx, kv.Key, kv.Value)
 	}
