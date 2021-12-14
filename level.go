@@ -44,6 +44,13 @@ func checkLevel(level int) {
 	}
 }
 
+func allowLevel(logLevel, minLevel int) bool {
+	if minLevel == LvlDisable {
+		return false
+	}
+	return logLevel >= minLevel
+}
+
 var globalLevel = int64(-1)
 
 // SetGlobalLevel sets the global level, which will act on all the logger.

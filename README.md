@@ -16,8 +16,8 @@ Provide a simple, flexible, extensible, powerful and structured logger based on 
 - Provide the simple and easy-used api interface.
     ```go
     type Logger interface {
-        // IsEnabled reports whether the logger is enabled.
-        IsEnabled() bool
+        // Enabled reports whether the logger is enabled.
+        Enabled() bool
 
         // Kv and Kvs append the key-value contexts and return the logger itself.
         Kv(key string, value interface{}) Logger

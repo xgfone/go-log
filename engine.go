@@ -22,25 +22,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync/atomic"
 
 	"github.com/xgfone/go-log/writer"
 )
-
-var globalSampling = int32(1)
-
-func globalSamplingIsEnabled() bool {
-	return atomic.LoadInt32(&globalSampling) == 1
-}
-
-// GlobalDisableSampling is used to disable all the samplings globally.
-func GlobalDisableSampling(disable bool) {
-	if disable {
-		atomic.StoreInt32(&globalSampling, 0)
-	} else {
-		atomic.StoreInt32(&globalSampling, 1)
-	}
-}
 
 // CallerFormatFunc is used to format the line and line of the caller.
 var CallerFormatFunc = func(file string, line int) string {
@@ -68,20 +52,6 @@ type HookFunc func(logger Logger, name string, level int, depth int)
 func (f HookFunc) Run(logger Logger, name string, level int, depth int) {
 	f(logger, name, level, depth+1)
 }
-
-// Sampler is used to sample the log message.
-type Sampler interface {
-	// Sample reports whether the log message should be sampled.
-	// If the log message should be sampled, return true. Or, return false,
-	// that's, the log message will be discarded.
-	Sample(loggerName string, level int) bool
-}
-
-// SamplerFunc is a function sampler.
-type SamplerFunc func(loggerName string, level int) bool
-
-// Sample implements the interface Sampler.
-func (f SamplerFunc) Sample(name string, lvl int) bool { return f(name, lvl) }
 
 type kvctx struct {
 	Key   string
@@ -190,10 +160,11 @@ func (e *Engine) disabled(logLevel, minThresholdLevel int) bool {
 // Clone clones itself and returns a new one.
 func (e *Engine) Clone() *Engine {
 	return &Engine{
-		name:   e.name,
-		level:  e.level,
-		depth:  e.depth,
-		Output: e.Output,
+		name:    e.name,
+		level:   e.level,
+		depth:   e.depth,
+		Output:  e.Output,
+		sampler: e.sampler,
 
 		hooks: append([]Hook{}, e.hooks...),
 		origs: append([]kvctx{}, e.origs...),
@@ -211,14 +182,6 @@ func (e *Engine) New(name string) *Engine {
 		ee.name = strings.Join([]string{ee.name, name}, ".")
 	}
 	return ee
-}
-
-// SetSampler resets the sampler and returns itself.
-//
-// If the sampler is nil, it will cancel the sampler.
-func (e *Engine) SetSampler(sampler Sampler) *Engine {
-	e.sampler = sampler
-	return e
 }
 
 // SetEncoder is the convenient function to set the encoder of the output to enc,
