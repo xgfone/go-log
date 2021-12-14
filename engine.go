@@ -15,43 +15,13 @@
 package log
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/xgfone/go-log/writer"
 )
-
-// CallerFormatFunc is used to format the line and line of the caller.
-var CallerFormatFunc = func(file string, line int) string {
-	return fmt.Sprintf("%s:%d", filepath.Base(file), line)
-}
-
-// Caller returns a callback function that returns the caller "file:line".
-func Caller(key string) Hook {
-	return HookFunc(func(logger Logger, name string, level, depth int) {
-		if _, file, line, ok := runtime.Caller(depth + 1); ok {
-			logger.Kv(key, CallerFormatFunc(file, line))
-		}
-	})
-}
-
-// Hook is used to add the dynamic value into the log record.
-type Hook interface {
-	Run(logger Logger, loggerName string, level int, depth int)
-}
-
-// HookFunc is a function hook.
-type HookFunc func(logger Logger, name string, level int, depth int)
-
-// Run implements the interface Hook.
-func (f HookFunc) Run(logger Logger, name string, level int, depth int) {
-	f(logger, name, level, depth+1)
-}
 
 type kvctx struct {
 	Key   string
@@ -196,18 +166,6 @@ func (e *Engine) SetEncoder(enc Encoder) *Engine {
 // SetWriter is the convenient function to set the writer of the output to w.
 func (e *Engine) SetWriter(w io.Writer) *Engine {
 	e.Output.SetWriter(w)
-	return e
-}
-
-// AddHooks appends the hooks and returns itself.
-func (e *Engine) AddHooks(hooks ...Hook) *Engine {
-	e.hooks = append(e.hooks, hooks...)
-	return e
-}
-
-// ResetHooks resets the hooks and returns itself.
-func (e *Engine) ResetHooks(hooks ...Hook) *Engine {
-	e.hooks = append([]Hook{}, hooks...)
 	return e
 }
 
