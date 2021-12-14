@@ -67,15 +67,25 @@ type JSONEncoder struct {
 	// Default: "t"
 	TimeKey string
 
-	// LoggerKey is the key name of the logger name.
+	// TimeFormatFunc is used to format time.Time.
 	//
-	// Default: "logger"
-	LoggerKey string
+	// Default: FormatTime
+	TimeFormatFunc func(dst []byte, t time.Time) []byte
 
 	// LevelKey is the key name of the level if not empty.
 	//
 	// Default: "lvl"
 	LevelKey string
+
+	// LevelFormatFunc is used to format the level.
+	//
+	// Default: FormatLevel
+	LevelFormatFunc func(level int) string
+
+	// LoggerKey is the key name of the logger name.
+	//
+	// Default: "logger"
+	LoggerKey string
 
 	// MsgKey is the key name of the message.
 	//
@@ -103,7 +113,7 @@ func (enc *JSONEncoder) Start(buf []byte, name string, level int) []byte {
 	if len(enc.TimeKey) > 0 {
 		buf = enc.appendString(buf, enc.TimeKey)
 		buf = append(buf, ':')
-		buf = FormatTime(buf, Now())
+		buf = enc.appendTime(buf, Now())
 		buf = append(buf, ',')
 	}
 
@@ -111,7 +121,11 @@ func (enc *JSONEncoder) Start(buf []byte, name string, level int) []byte {
 	if len(enc.LevelKey) > 0 {
 		buf = enc.appendString(buf, enc.LevelKey)
 		buf = append(buf, ':')
-		buf = enc.appendString(buf, FormatLevel(level))
+		if enc.LevelFormatFunc == nil {
+			buf = enc.appendString(buf, FormatLevel(level))
+		} else {
+			buf = enc.appendString(buf, enc.LevelFormatFunc(level))
+		}
 		buf = append(buf, ',')
 	}
 
@@ -161,6 +175,15 @@ func (enc *JSONEncoder) End(buf []byte, msg string) []byte {
 	return buf
 }
 
+func (enc *JSONEncoder) appendTime(buf []byte, t time.Time) []byte {
+	if enc.TimeFormatFunc == nil {
+		buf = FormatTime(buf, t)
+	} else {
+		buf = enc.TimeFormatFunc(buf, t)
+	}
+	return buf
+}
+
 func (enc *JSONEncoder) appendString(buf []byte, s string) []byte {
 	buf = append(buf, '"')
 
@@ -198,7 +221,7 @@ func (enc *JSONEncoder) appendAny(buf []byte, any interface{}) []byte {
 		buf = append(buf, '"')
 
 	case time.Time:
-		buf = FormatTime(buf, v)
+		buf = enc.appendTime(buf, v)
 
 	case nil:
 		buf = append(buf, `null`...)
