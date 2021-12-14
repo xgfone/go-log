@@ -20,16 +20,6 @@ import (
 	"sync/atomic"
 )
 
-var globalLevel = int64(-1)
-
-// SetGlobalLevel sets the global level, which will act on all the logger.
-//
-// If the level is negative, it will unset the global level.
-func SetGlobalLevel(level int) { atomic.StoreInt64(&globalLevel, int64(level)) }
-
-// GetGlobalLevel returns the global level setting.
-func GetGlobalLevel() int { return int(atomic.LoadInt64(&globalLevel)) }
-
 // Predefine some levels.
 const (
 	LvlDisable = int(0)
@@ -42,6 +32,35 @@ const (
 	LvlPanic   = int(120)
 	LvlFatal   = int(127)
 )
+
+// LevelIsValid reports whether the level is valid.
+func LevelIsValid(level int) bool {
+	return LvlFatal >= level && level >= LvlDisable
+}
+
+func checkLevel(level int) {
+	if !LevelIsValid(level) {
+		panic(fmt.Errorf("invalid level '%d'", level))
+	}
+}
+
+var globalLevel = int64(-1)
+
+// SetGlobalLevel sets the global level, which will act on all the logger.
+//
+// If the level is negative, it will unset the global level.
+func SetGlobalLevel(level int) {
+	if level >= LvlDisable {
+		checkLevel(level)
+	}
+	atomic.StoreInt64(&globalLevel, int64(level))
+}
+
+// GetGlobalLevel returns the global level setting.
+//
+// Notice: if the returned level value is negative, it represents
+// that no global level is set.
+func GetGlobalLevel() int { return int(atomic.LoadInt64(&globalLevel)) }
 
 // FormatLevel is used to format the level to string.
 var FormatLevel func(level int) string = formatLevel
@@ -67,9 +86,7 @@ func formatLevel(level int) string {
 	case LvlFatal:
 		return "fatal"
 	default:
-		if level < 0 {
-			panic(fmt.Errorf("invalid level '%d'", level))
-		}
+		checkLevel(level)
 		return fmt.Sprintf("Level(%d)", level)
 	}
 }
@@ -106,9 +123,11 @@ func ParseLevel(level string, defaultLevel ...int) int {
 	case "fatal", "F":
 		return LvlFatal
 	default:
-		if len(defaultLevel) > 0 {
-			return defaultLevel[0]
+		if len(defaultLevel) == 0 {
+			panic(fmt.Errorf("unknown level '%s'", level))
 		}
-		panic(fmt.Errorf("unknown level '%s'", level))
+
+		checkLevel(defaultLevel[0])
+		return defaultLevel[0]
 	}
 }

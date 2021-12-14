@@ -132,9 +132,7 @@ func (e *Engine) SetDepth(depth int) *Engine {
 //
 // Notice: the level must not be negative.
 func (e *Engine) SetLevel(level int) *Engine {
-	if level < LvlDisable {
-		panic(fmt.Errorf("invalid log level '%d'", level))
-	}
+	checkLevel(level)
 	e.level = level
 	return e
 }
@@ -149,31 +147,25 @@ func (e *Engine) GetLevel() int { return e.level }
 func (e *Engine) Enabled() bool { return e.Enable(e.level) }
 
 // Enable reports whether the given level is enabled.
-func (e *Engine) Enable(level int) bool { return !e.isDisabled(level) }
+func (e *Engine) Enable(level int) bool {
+	checkLevel(level)
+	return !e.isDisabled(level)
+}
 
 func (e *Engine) isDisabled(level int) bool {
-	if e.level == LvlDisable {
-		return true
-	}
-
 	if global := GetGlobalLevel(); global >= LvlDisable {
-		if level < global {
-			return true
-		}
-
-		if e.sampler != nil && globalSamplingIsEnabled() {
-			return !e.sampler.Sample(e.name, level)
-		}
-
-		return false
+		return e.disabled(level, global)
 	}
+	return e.disabled(level, e.level)
+}
 
-	if level < e.level {
+func (e *Engine) disabled(logLevel, minThresholdLevel int) bool {
+	if minThresholdLevel == LvlDisable || logLevel < minThresholdLevel {
 		return true
 	}
 
 	if e.sampler != nil && globalSamplingIsEnabled() {
-		return !e.sampler.Sample(e.name, level)
+		return !e.sampler.Sample(e.name, logLevel)
 	}
 
 	return false
@@ -267,7 +259,7 @@ func (e *Engine) Write(p []byte) (n int, err error) {
 	if n > 0 && p[n-1] == '\n' {
 		p = p[:n-1]
 	}
-	e.Logger(e.level, 1).Printf(string(p))
+	e.getLogger(e.level, 1).Printf(string(p))
 	return
 }
 

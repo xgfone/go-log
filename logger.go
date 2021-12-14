@@ -151,15 +151,23 @@ func (e *Engine) Printf(msg string, args ...interface{}) {
 	newLogger(e, e.level, e.depth).Printf(msg, args...)
 }
 
+func (e *Engine) getLogger(level, depth int) Logger {
+	return newLogger(e, level, e.depth+depth)
+}
+
 // Logger returns a logger with the level and the additional stack depth
 // to emit the log.
 func (e *Engine) Logger(level, depth int) Logger {
+	checkLevel(level)
 	return newLogger(e, level, e.depth+depth)
 }
 
 // Level implements the interface LevelLogger to emit the log based on the level,
 // which is equal to e.Logger(level, 0).
-func (e *Engine) Level(level int) Logger { return newLogger(e, level, e.depth) }
+func (e *Engine) Level(level int) Logger {
+	checkLevel(level)
+	return newLogger(e, level, e.depth)
+}
 
 // Trace is equal to e.Level(LvlTrace).
 func (e *Engine) Trace() Logger { return newLogger(e, LvlTrace, e.depth) }
