@@ -94,7 +94,34 @@ func formatLevel(level int) string {
 		return "disable"
 	default:
 		checkLevel(level)
-		return fmt.Sprintf("Level(%d)", level)
+		switch {
+		case level < LvlDebug:
+			return fmt.Sprintf("trace%d", level-LvlTrace)
+
+		case level < LvlInfo:
+			return fmt.Sprintf("debug%d", level-LvlDebug)
+
+		case level < LvlWarn:
+			return fmt.Sprintf("info%d", level-LvlInfo)
+
+		case level < LvlError:
+			return fmt.Sprintf("warn%d", level-LvlWarn)
+
+		case level < LvlAlert:
+			return fmt.Sprintf("error%d", level-LvlError)
+
+		case level < LvlPanic:
+			return fmt.Sprintf("alert%d", level-LvlAlert)
+
+		case level < LvlFatal:
+			return fmt.Sprintf("panic%d", level-LvlPanic)
+
+		case level < LvlDisable:
+			return fmt.Sprintf("fatal%d", level-LvlFatal)
+
+		default:
+			return fmt.Sprintf("Level(%d)", level)
+		}
 	}
 }
 
