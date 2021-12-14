@@ -79,13 +79,13 @@
 //       child2Logger.Printf("msg10")
 //
 //       // $ go run main.go
-//       // {"t":"2021-12-12T11:41:11.2844234+08:00","lvl":"info","caller":"main.go:32","msg":"msg1"}
-//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:33","msg":"msg2"}
-//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:34","key1":"value1","msg":"msg3"}
-//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:36","key3":"value3","msg":"msg5"}
-//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:37","key4":"value4","msg":"msg6"}
-//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"error","caller":"main.go:39","key8":888,"key9":"value9","err":"error","msg":"msg8"}
-//       // {"t":"2021-12-12T12:22:15.2466635+08:00","lvl":"info","logger":"child1","caller":"main.go:44","ckey1":"cvalue1","msg":"msg9"}
-//       // {"t":"2021-12-12T12:22:15.2466635+08:00","lvl":"info","logger":"child1.child2","caller":"main.go:45","msg":"msg10"}
+//       // {"t":"2021-12-12T11:41:11.2844234+08:00","lvl":"info","caller":"main.go:32:main","msg":"msg1"}
+//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:33:main","msg":"msg2"}
+//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:34:main","key1":"value1","msg":"msg3"}
+//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:36:main","key3":"value3","msg":"msg5"}
+//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:37:main","key4":"value4","msg":"msg6"}
+//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"error","caller":"main.go:39:main","key8":888,"key9":"value9","err":"error","msg":"msg8"}
+//       // {"t":"2021-12-12T12:22:15.2466635+08:00","lvl":"info","logger":"child1","caller":"main.go:44:main","ckey1":"cvalue1","msg":"msg9"}
+//       // {"t":"2021-12-12T12:22:15.2466635+08:00","lvl":"info","logger":"child1.child2","caller":"main.go:45:main","msg":"msg10"}
 //   }
 package log
