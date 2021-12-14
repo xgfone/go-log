@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !go.1.16
-// +build !go.1.16
+//go:build go1.16
+// +build go1.16
 
 package writer
 
