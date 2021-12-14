@@ -41,15 +41,15 @@ func TestLoggerStackDepth(t *testing.T) {
 	logger.Kv("key4", "value4").Printf("msg8")
 
 	expects := []string{
-		`{"lvl":"info","logger":"test","caller":"hook_test.go:33","msg":"msg0"}`,
-		`{"lvl":"info","logger":"test","caller":"hook_test.go:34","msg":"msg1"}`,
-		`{"lvl":"info","logger":"test","caller":"hook_test.go:35","msg":"msg2"}`,
-		`{"lvl":"info","logger":"test","caller":"hook_test.go:36","key1":"value1","msg":"msg3"}`,
-		`{"lvl":"info","logger":"test","caller":"hook_test.go:37","key2":"value2","msg":"msg4"}`,
-		`{"lvl":"debug","logger":"test","caller":"hook_test.go:38","msg":"msg5"}`,
-		`{"lvl":"debug","logger":"test","caller":"hook_test.go:39","msg":"msg6"}`,
-		`{"lvl":"debug","logger":"test","caller":"hook_test.go:40","key3":"value3","msg":"msg7"}`,
-		`{"lvl":"debug","logger":"test","caller":"hook_test.go:41","key4":"value4","msg":"msg8"}`,
+		`{"lvl":"info","logger":"test","caller":"hook_test.go:33:TestLoggerStackDepth","msg":"msg0"}`,
+		`{"lvl":"info","logger":"test","caller":"hook_test.go:34:TestLoggerStackDepth","msg":"msg1"}`,
+		`{"lvl":"info","logger":"test","caller":"hook_test.go:35:TestLoggerStackDepth","msg":"msg2"}`,
+		`{"lvl":"info","logger":"test","caller":"hook_test.go:36:TestLoggerStackDepth","key1":"value1","msg":"msg3"}`,
+		`{"lvl":"info","logger":"test","caller":"hook_test.go:37:TestLoggerStackDepth","key2":"value2","msg":"msg4"}`,
+		`{"lvl":"debug","logger":"test","caller":"hook_test.go:38:TestLoggerStackDepth","msg":"msg5"}`,
+		`{"lvl":"debug","logger":"test","caller":"hook_test.go:39:TestLoggerStackDepth","msg":"msg6"}`,
+		`{"lvl":"debug","logger":"test","caller":"hook_test.go:40:TestLoggerStackDepth","key3":"value3","msg":"msg7"}`,
+		`{"lvl":"debug","logger":"test","caller":"hook_test.go:41:TestLoggerStackDepth","key4":"value4","msg":"msg8"}`,
 		"",
 	}
 	if lines := strings.Split(buf.String(), "\n"); len(lines) != len(expects) {

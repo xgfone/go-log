@@ -20,16 +20,21 @@ import (
 	"runtime"
 )
 
-// CallerFormatFunc is used to format the line and line of the caller.
-var CallerFormatFunc = func(file string, line int) string {
-	return fmt.Sprintf("%s:%d", filepath.Base(file), line)
+// CallerFormatFunc is used to format the file, name and line of the caller.
+var CallerFormatFunc = func(file, name string, line int) string {
+	name = filepath.Ext(name)
+	if len(name) > 0 && name[0] == '.' {
+		name = name[1:]
+	}
+	return fmt.Sprintf("%s:%d:%s", filepath.Base(file), line, name)
 }
 
 // Caller returns a callback function that returns the caller "file:line".
 func Caller(key string) Hook {
 	return HookFunc(func(logger Logger, name string, level, depth int) {
-		if _, file, line, ok := runtime.Caller(depth + 1); ok {
-			logger.Kv(key, CallerFormatFunc(file, line))
+		if pc, file, line, ok := runtime.Caller(depth + 1); ok {
+			f := runtime.FuncForPC(pc)
+			logger.Kv(key, CallerFormatFunc(file, f.Name(), line))
 		}
 	})
 }

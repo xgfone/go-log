@@ -38,13 +38,13 @@ func TestGlobal(t *testing.T) {
 	StdLog("stdlog: ").Print("msg7")
 
 	expects := []string{
-		`{"lvl":"info","caller":"logger_test.go:32","msg":"msg1"}`,
-		`{"lvl":"info","caller":"logger_test.go:33","msg":"msg2"}`,
-		`{"lvl":"debug","caller":"logger_test.go:34","msg":"msg3"}`,
-		`{"lvl":"debug","caller":"logger_test.go:35","msg":"msg4"}`,
-		`{"lvl":"error","caller":"logger_test.go:36","err":"error","msg":"msg5"}`,
-		`{"lvl":"error","caller":"logger_test.go:37","k":"v","err":"error","msg":"msg6"}`,
-		`{"lvl":"debug","caller":"logger_test.go:38","msg":"stdlog: msg7"}`,
+		`{"lvl":"info","caller":"logger_test.go:32:TestGlobal","msg":"msg1"}`,
+		`{"lvl":"info","caller":"logger_test.go:33:TestGlobal","msg":"msg2"}`,
+		`{"lvl":"debug","caller":"logger_test.go:34:TestGlobal","msg":"msg3"}`,
+		`{"lvl":"debug","caller":"logger_test.go:35:TestGlobal","msg":"msg4"}`,
+		`{"lvl":"error","caller":"logger_test.go:36:TestGlobal","err":"error","msg":"msg5"}`,
+		`{"lvl":"error","caller":"logger_test.go:37:TestGlobal","k":"v","err":"error","msg":"msg6"}`,
+		`{"lvl":"debug","caller":"logger_test.go:38:TestGlobal","msg":"stdlog: msg7"}`,
 		"",
 	}
 	if lines := strings.Split(buf.String(), "\n"); len(lines) != len(expects) {
@@ -71,9 +71,9 @@ func TestStdLog(t *testing.T) {
 	stdlog2.Print("msg3")
 
 	expects := []string{
-		`{"lvl":"debug","logger":"test","caller":"logger_test.go:67","msg":"msg1"}`,
-		`{"lvl":"debug","logger":"test","caller":"logger_test.go:68","msg":"msg2"}`,
-		`{"lvl":"debug","logger":"test","caller":"logger_test.go:71","msg":"stdlog: msg3"}`,
+		`{"lvl":"debug","logger":"test","caller":"logger_test.go:67:TestStdLog","msg":"msg1"}`,
+		`{"lvl":"debug","logger":"test","caller":"logger_test.go:68:TestStdLog","msg":"msg2"}`,
+		`{"lvl":"debug","logger":"test","caller":"logger_test.go:71:TestStdLog","msg":"stdlog: msg3"}`,
 		``,
 	}
 	if lines := strings.Split(buf.String(), "\n"); len(lines) != len(expects) {

@@ -34,9 +34,9 @@ func ExampleLogger() {
 	logger.Alertf("%s msg", "alert")
 
 	// Output:
-	// {"lvl":"debug","caller":"logf_test.go:30","msg":"debug msg"}
-	// {"lvl":"info","caller":"logf_test.go:31","msg":"info msg"}
-	// {"lvl":"warn","caller":"logf_test.go:32","msg":"warn msg"}
-	// {"lvl":"error","caller":"logf_test.go:33","msg":"error msg"}
-	// {"lvl":"alert","caller":"logf_test.go:34","msg":"alert msg"}
+	// {"lvl":"debug","caller":"logf_test.go:30:ExampleLogger","msg":"debug msg"}
+	// {"lvl":"info","caller":"logf_test.go:31:ExampleLogger","msg":"info msg"}
+	// {"lvl":"warn","caller":"logf_test.go:32:ExampleLogger","msg":"warn msg"}
+	// {"lvl":"error","caller":"logf_test.go:33:ExampleLogger","msg":"error msg"}
+	// {"lvl":"alert","caller":"logf_test.go:34:ExampleLogger","msg":"alert msg"}
 }
