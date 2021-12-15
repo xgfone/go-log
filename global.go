@@ -48,8 +48,13 @@ func AddHooks(hooks ...Hook) *Engine { return DefaultLogger.AddHooks(hooks...) }
 // ResetHooks is equal to DefaultLogger.ResetHooks(hooks...).
 func ResetHooks(hooks ...Hook) *Engine { return DefaultLogger.ResetHooks(hooks...) }
 
-// ResetCtxs is equal to DefaultLogger.ResetCtxs().
-func ResetCtxs() *Engine { return DefaultLogger.ResetCtxs() }
+// ResetCtxs is equal to DefaultLogger.ResetCtxs(kvs...).
+func ResetCtxs(kvs ...interface{}) *Engine { return DefaultLogger.ResetCtxs(kvs...) }
+
+// AppendCtxs is equal to DefaultLogger.AppendCtx(kvs...).
+func AppendCtxs(kvs ...interface{}) *Engine {
+	return DefaultLogger.AppendCtxs(kvs...)
+}
 
 // AppendCtx is equal to DefaultLogger.AppendCtx(key, value).
 func AppendCtx(key string, value interface{}) *Engine {
