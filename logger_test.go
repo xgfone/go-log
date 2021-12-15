@@ -18,10 +18,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/xgfone/go-atexit"
 )
 
 func TestGlobal(t *testing.T) {
@@ -30,21 +33,19 @@ func TestGlobal(t *testing.T) {
 	DefaultLogger.Output.encoder.(*JSONEncoder).TimeKey = ""
 
 	Info().Printf("msg1")
-	Infof("msg2")
-	Printf("msg3")
-	Print("msg4")
-	Ef(errors.New("error"), "msg5")
-	IfErr(errors.New("error"), "msg6", "k", "v")
-	StdLog("stdlog: ").Print("msg7")
+	Printf("msg2")
+	Print("msg3")
+	Ef(errors.New("error"), "msg4")
+	IfErr(errors.New("error"), "msg5", "k", "v")
+	StdLog("stdlog: ").Print("msg6")
 
 	expects := []string{
-		`{"lvl":"info","caller":"logger_test.go:32:TestGlobal","msg":"msg1"}`,
-		`{"lvl":"info","caller":"logger_test.go:33:TestGlobal","msg":"msg2"}`,
-		`{"lvl":"debug","caller":"logger_test.go:34:TestGlobal","msg":"msg3"}`,
-		`{"lvl":"debug","caller":"logger_test.go:35:TestGlobal","msg":"msg4"}`,
-		`{"lvl":"error","caller":"logger_test.go:36:TestGlobal","err":"error","msg":"msg5"}`,
-		`{"lvl":"error","caller":"logger_test.go:37:TestGlobal","k":"v","err":"error","msg":"msg6"}`,
-		`{"lvl":"debug","caller":"logger_test.go:38:TestGlobal","msg":"stdlog: msg7"}`,
+		`{"lvl":"info","caller":"logger_test.go:35:TestGlobal","msg":"msg1"}`,
+		`{"lvl":"debug","caller":"logger_test.go:36:TestGlobal","msg":"msg2"}`,
+		`{"lvl":"debug","caller":"logger_test.go:37:TestGlobal","msg":"msg3"}`,
+		`{"lvl":"error","caller":"logger_test.go:38:TestGlobal","err":"error","msg":"msg4"}`,
+		`{"lvl":"error","caller":"logger_test.go:39:TestGlobal","k":"v","err":"error","msg":"msg5"}`,
+		`{"lvl":"debug","caller":"logger_test.go:40:TestGlobal","msg":"stdlog: msg6"}`,
 		"",
 	}
 	if lines := strings.Split(buf.String(), "\n"); len(lines) != len(expects) {
@@ -71,9 +72,9 @@ func TestStdLog(t *testing.T) {
 	stdlog2.Print("msg3")
 
 	expects := []string{
-		`{"lvl":"debug","logger":"test","caller":"logger_test.go:67:TestStdLog","msg":"msg1"}`,
-		`{"lvl":"debug","logger":"test","caller":"logger_test.go:68:TestStdLog","msg":"msg2"}`,
-		`{"lvl":"debug","logger":"test","caller":"logger_test.go:71:TestStdLog","msg":"stdlog: msg3"}`,
+		`{"lvl":"debug","logger":"test","caller":"logger_test.go:68:TestStdLog","msg":"msg1"}`,
+		`{"lvl":"debug","logger":"test","caller":"logger_test.go:69:TestStdLog","msg":"msg2"}`,
+		`{"lvl":"debug","logger":"test","caller":"logger_test.go:72:TestStdLog","msg":"stdlog: msg3"}`,
 		``,
 	}
 	if lines := strings.Split(buf.String(), "\n"); len(lines) != len(expects) {
@@ -125,6 +126,43 @@ func TestChildLoggerName(t *testing.T) {
 	}
 	if name := child3.Name(); name != "parent.child2.child3" {
 		t.Errorf("expect the logger name '%s', but got '%s'", "parent.child2.child3", name)
+	}
+}
+
+func TestLevelPanicAndFatal(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	enc := NewJSONEncoder()
+	enc.TimeKey = ""
+	logger := New("").SetWriter(buf).SetEncoder(enc)
+	atexit.ExitFunc = func(code int) { fmt.Fprintf(buf, "exit with %d\n", code) }
+
+	func(l *Engine) {
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Fprintf(buf, "panic: %v\n", err)
+			}
+		}()
+		logger.Panic().Printf("msg1")
+	}(logger)
+
+	logger.Fatal().Printf("msg2")
+
+	expects := []string{
+		`{"lvl":"panic","msg":"msg1"}`,
+		`panic: msg1`,
+		`{"lvl":"fatal","msg":"msg2"}`,
+		`exit with 1`,
+		``,
+	}
+	lines := strings.Split(buf.String(), "\n")
+	if len(lines) != len(expects) {
+		t.Errorf("expect %d lines, but got %d", len(expects), len(lines))
+	} else {
+		for i, line := range expects {
+			if lines[i] != line {
+				t.Errorf("%d: expect line '%s', but got '%s'", i, line, lines[i])
+			}
+		}
 	}
 }
 

@@ -94,46 +94,6 @@ func Panic() Logger { return DefaultLogger.getLogger(LvlPanic, 1) }
 // Fatal is equal to DefaultLogger.Fatal().
 func Fatal() Logger { return DefaultLogger.getLogger(LvlFatal, 1) }
 
-// Tracef is equal to DefaultLogger.Trace().Printf(msg, args...).
-func Tracef(msg string, args ...interface{}) {
-	DefaultLogger.getLogger(LvlTrace, 1).Printf(msg, args...)
-}
-
-// Debugf is equal to DefaultLogger.Debug().Printf(msg, args...).
-func Debugf(msg string, args ...interface{}) {
-	DefaultLogger.getLogger(LvlDebug, 1).Printf(msg, args...)
-}
-
-// Infof is equal to DefaultLogger.Info().Printf(msg, args...).
-func Infof(msg string, args ...interface{}) {
-	DefaultLogger.getLogger(LvlInfo, 1).Printf(msg, args...)
-}
-
-// Warnf is equal to DefaultLogger.Warn().Printf(msg, args...).
-func Warnf(msg string, args ...interface{}) {
-	DefaultLogger.getLogger(LvlWarn, 1).Printf(msg, args...)
-}
-
-// Errorf is equal to DefaultLogger.Error().Printf(msg, args...).
-func Errorf(msg string, args ...interface{}) {
-	DefaultLogger.getLogger(LvlError, 1).Printf(msg, args...)
-}
-
-// Alertf is equal to DefaultLogger.Alert().Printf(msg, args...).
-func Alertf(msg string, args ...interface{}) {
-	DefaultLogger.getLogger(LvlAlert, 1).Printf(msg, args...)
-}
-
-// Panicf is equal to DefaultLogger.Panic().Printf(msg, args...).
-func Panicf(msg string, args ...interface{}) {
-	DefaultLogger.getLogger(LvlPanic, 1).Printf(msg, args...)
-}
-
-// Fatalf is equal to DefaultLogger.Fatal().Printf(msg, args...).
-func Fatalf(msg string, args ...interface{}) {
-	DefaultLogger.getLogger(LvlFatal, 1).Printf(msg, args...)
-}
-
 // Kv is equal to DefaultLogger.Kv(key, value).
 func Kv(key string, value interface{}) Logger {
 	return DefaultLogger.getLogger(DefaultLogger.level, 1).Kv(key, value)
