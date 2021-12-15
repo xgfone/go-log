@@ -18,7 +18,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/xgfone/go-log/writer"
 )
@@ -75,44 +74,6 @@ type lvlWriter struct{ io.Writer }
 func (lw lvlWriter) UnwrapWriter() io.Writer                 { return lw.Writer }
 func (lw lvlWriter) WriteLevel(l int, p []byte) (int, error) { return lw.Write(p) }
 func (lw lvlWriter) Close() (err error)                      { return writer.Close(lw.Writer) }
-
-/// ----------------------------------------------------------------------- ///
-
-// SafeLevelWriter wraps the level writer and returns a thread-safe LevelWriter.
-func SafeLevelWriter(lw LevelWriter) LevelWriter {
-	if lw == nil {
-		panic("SafeLevelWriter: the wrapped LevelWriter is nil")
-	}
-	return &safeLevelWriter{lw: lw}
-}
-
-type safeLevelWriter struct {
-	lock sync.Mutex
-	lw   LevelWriter
-}
-
-func (w *safeLevelWriter) UnwrapWriter() io.Writer { return w.lw }
-
-func (w *safeLevelWriter) Close() (err error) {
-	w.lock.Lock()
-	err = writer.Close(w.lw)
-	w.lock.Unlock()
-	return
-}
-
-func (w *safeLevelWriter) Write(p []byte) (n int, err error) {
-	w.lock.Lock()
-	n, err = w.Write(p)
-	w.lock.Unlock()
-	return
-}
-
-func (w *safeLevelWriter) WriteLevel(lvl int, p []byte) (n int, err error) {
-	w.lock.Lock()
-	n, err = w.WriteLevel(lvl, p)
-	w.lock.Unlock()
-	return
-}
 
 /// ----------------------------------------------------------------------- ///
 
