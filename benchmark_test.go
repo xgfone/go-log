@@ -57,7 +57,7 @@ func BenchmarkNothingEncoder(b *testing.B) {
 	})
 }
 
-func BenchmarkJSONEncoderWithoutContextsAndKeyValues(b *testing.B) {
+func BenchmarkJSONEncoderWithoutCtxsAndKVs(b *testing.B) {
 	logger := New("").SetWriter(writer.Discard).SetEncoder(newTestJSONEncoder())
 
 	b.ReportAllocs()

@@ -292,10 +292,10 @@ cpu: 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
 ```
 
 **Benchmark Package:**
-|                     Function                     |        ops       | ns/op  | bytes/opt | allocs/op
-|--------------------------------------------------|-----------------:|-------:|-----------|----------
-|BenchmarkLevelDisabled-8                          | 1, 000, 000, 000 |   0.76 |     0     |    0
-|BenchmarkNothingEncoder-8                         |    150, 158, 604 |  11.00 |     0     |    0
-|BenchmarkJSONEncoderWithoutContextsAndKeyValues-8 |     82, 356, 866 |  15.01 |     0     |    0
-|BenchmarkJSONEncoderWith8Contexts-8               |     84, 787, 077 |  14.40 |     0     |    0
-|BenchmarkJSONEncoderWith8KeyValues-8              |     26, 949, 334 |  45.83 |     0     |    0
+|                     Function           |        ops       | ns/op  | bytes/opt | allocs/op
+|----------------------------------------|-----------------:|-------:|-----------|----------
+|BenchmarkLevelDisabled-8                | 1, 000, 000, 000 |   0.76 |     0     |    0
+|BenchmarkNothingEncoder-8               |    150, 158, 604 |  11.00 |     0     |    0
+|BenchmarkJSONEncoderWithoutCtxsAndKVs-8 |     82, 356, 866 |  15.01 |     0     |    0
+|BenchmarkJSONEncoderWith8Contexts-8     |     84, 787, 077 |  14.40 |     0     |    0
+|BenchmarkJSONEncoderWith8KeyValues-8    |     26, 949, 334 |  45.83 |     0     |    0
