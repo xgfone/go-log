@@ -91,14 +91,15 @@ func (l *logger) Printf(msg string, args ...interface{}) {
 }
 
 func (l *logger) emit(msg string) {
+	level := l.level
 	l.buffer = l.encoder.End(l.buffer, msg)
-	l.writer.WriteLevel(l.level, l.buffer)
+	l.writer.WriteLevel(level, l.buffer)
 	l.buffer = l.buffer[:0]
 	loggerPool.Put(l)
 
-	if l.level == LvlFatal {
+	if level == LvlFatal {
 		atexit.Exit(1)
-	} else if l.level >= LvlPanic {
+	} else if level >= LvlPanic {
 		panic(msg)
 	}
 }
