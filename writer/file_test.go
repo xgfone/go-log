@@ -35,16 +35,21 @@ func TestSizedRotatingFile(t *testing.T) {
 	data := []byte("0123456789")
 	logfiles := make(map[string]int64)
 
-	file := SafeWriter(NewSizedRotatingFile(filename, int(size), 3))
+	file := NewSizedRotatingFile(filename, int(size), 3)
+	writer := SafeWriter(BufferWriter(file, len(data)))
+	if UnwrapWriter(writer) != file {
+		t.Error("UnwrapWriter: not file writer")
+	}
+
 	defer func() {
-		Close(file)
+		Close(writer)
 		for name := range logfiles {
 			os.Remove(name)
 		}
 	}()
 
 	for i := 0; i < 10; i++ {
-		n, err := file.Write(data)
+		n, err := writer.Write(data)
 		if err != nil {
 			t.Error(err)
 		} else if _len := len(data); n != _len {

@@ -16,6 +16,7 @@
 package writer
 
 import (
+	"bufio"
 	"io"
 	"sync"
 )
@@ -64,28 +65,58 @@ func UnwrapWriter(writer io.Writer) io.Writer {
 /// ----------------------------------------------------------------------- ///
 
 type safeWriter struct {
-	lock sync.Mutex
-	io.Writer
+	writer io.Writer
+	lock   sync.Mutex
 }
 
 func (w *safeWriter) Close() (err error) {
 	w.lock.Lock()
-	err = Close(w.Writer)
+	err = Close(w.writer)
 	w.lock.Unlock()
 	return
 }
 
 func (w *safeWriter) Write(p []byte) (n int, err error) {
 	w.lock.Lock()
-	n, err = w.Writer.Write(p)
+	n, err = w.writer.Write(p)
 	w.lock.Unlock()
 	return
 }
 
-func (w *safeWriter) UnwrapWriter() io.Writer { return w.Writer }
+func (w *safeWriter) UnwrapWriter() io.Writer { return w.writer }
 
 // SafeWriter is guaranteed that only a single writing operation can proceed
 // at a time.
 //
 // It's necessary for thread-safe concurrent writes.
-func SafeWriter(w io.Writer) io.WriteCloser { return &safeWriter{Writer: w} }
+func SafeWriter(writer io.Writer) io.WriteCloser {
+	if writer == nil {
+		panic("SafeWriter: the wrapped writer is nil")
+	}
+	return &safeWriter{writer: writer}
+}
+
+/// ----------------------------------------------------------------------- ///
+
+type bufWriter struct {
+	bufw *bufio.Writer
+	orig io.Writer
+}
+
+func (w bufWriter) UnwrapWriter() io.Writer     { return w.orig }
+func (w bufWriter) Write(p []byte) (int, error) { return w.bufw.Write(p) }
+func (w bufWriter) Close() error {
+	w.bufw.Flush()
+	return Close(w.orig)
+}
+
+// BufferWriter returns a buffer writer, which writes the data into the buffer
+// and flushes all the datas into the wrapped writer when the buffer is full.
+//
+// If bufSize is equal to or less than 0, it is 4096 by default.
+func BufferWriter(writer io.Writer, bufSize int) io.WriteCloser {
+	if writer == nil {
+		panic("BufferWriter: the wrapped writer is nil")
+	}
+	return bufWriter{orig: writer, bufw: bufio.NewWriterSize(writer, bufSize)}
+}
