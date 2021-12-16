@@ -53,6 +53,20 @@ func (o *Output) GetEncoder() Encoder { return o.encoder }
 // SetEncoder resets the log encoder to enc.
 func (o *Output) SetEncoder(enc Encoder) { o.encoder = enc }
 
+// WithWriter returns a new logger with the writer.
+func (l Logger) WithWriter(writer io.Writer) Logger {
+	l = l.Clone()
+	l.Output = NewOutput(writer, l.Output.encoder)
+	return l
+}
+
+// WithEncoder returns a new logger with the encoder.
+func (l Logger) WithEncoder(encoder Encoder) Logger {
+	l = l.Clone()
+	l.Output = NewOutput(l.Output.writer, encoder)
+	return l
+}
+
 /// ----------------------------------------------------------------------- ///
 
 // LevelWriter is a writer with the level.

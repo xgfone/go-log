@@ -26,21 +26,22 @@ func ExampleSimpleSampler() {
 	sampler.ResetNamedLevels(map[string]int{"root": LvlError})
 	sampler.AddNamedLevel("root.child1.*", LvlWarn)
 
-	logger := New("root").SetWriter(os.Stdout).SetEncoder(encoder)
-	logger.SetSampler(sampler)
+	logger := New("root").WithSampler(sampler)
+	logger.SetWriter(os.Stdout)
+	logger.SetEncoder(encoder)
 
 	logger.Debug().Print("msg11")
 	logger.Info().Print("msg12")
 	logger.Warn().Print("msg13")
 	logger.Error().Print("msg14")
 
-	clogger := logger.New("child1")
+	clogger := logger.WithName("child1")
 	clogger.Debug().Print("msg21")
 	clogger.Info().Print("msg22")
 	clogger.Warn().Print("msg23")
 	clogger.Error().Print("msg24")
 
-	cclogger := clogger.New("child2")
+	cclogger := clogger.WithName("child2")
 	cclogger.Debug().Print("msg31")
 	cclogger.Info().Print("msg32")
 	cclogger.Warn().Print("msg33")
@@ -65,8 +66,9 @@ func ExampleSwitchSampler() {
 	sampler1.ResetNamedLevels(map[string]int{"root": LvlWarn})
 
 	switchSampler := NewSwitchSampler(sampler1)
-	logger := New("root").SetWriter(os.Stdout).SetEncoder(encoder)
-	logger.SetSampler(switchSampler)
+	logger := New("root").WithSampler(switchSampler)
+	logger.SetWriter(os.Stdout)
+	logger.SetEncoder(encoder)
 
 	logger.Debug().Print("msg1")
 	logger.Info().Print("msg2")

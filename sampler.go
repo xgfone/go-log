@@ -49,18 +49,18 @@ type SamplerFunc func(loggerName string, level int) bool
 // Sample implements the interface Sampler.
 func (f SamplerFunc) Sample(name string, lvl int) bool { return f(name, lvl) }
 
-// GetSampler returns the sampler.
+// Sampler returns the sampler.
 //
 // If no sampler is set, return nil.
-func (e *Engine) GetSampler() Sampler { return e.sampler }
+func (l Logger) Sampler() Sampler { return l.sampler }
 
-// SetSampler resets the sampler and returns itself, which is not thread-safe.
-// For thread-safe, SwitchSampler may be used.
+// WithSampler returns a new logger with the sampler.
 //
 // If the sampler is nil, it will cancel the sampler.
-func (e *Engine) SetSampler(sampler Sampler) *Engine {
-	e.sampler = sampler
-	return e
+func (l Logger) WithSampler(sampler Sampler) Logger {
+	l = l.Clone()
+	l.sampler = sampler
+	return l
 }
 
 /// ----------------------------------------------------------------------- ///

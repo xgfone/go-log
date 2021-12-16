@@ -27,96 +27,55 @@ import (
 	"github.com/xgfone/go-atexit"
 )
 
-func TestGlobal(t *testing.T) {
-	buf := bytes.NewBufferString("")
-	DefaultLogger.SetWriter(buf)
-	DefaultLogger.Output.encoder.(*JSONEncoder).TimeKey = ""
-
-	Info().Printf("msg1")
-	Printf("msg2")
-	Print("msg3")
-	Ef(errors.New("error"), "msg4")
-	IfErr(errors.New("error"), "msg5", "k", "v")
-	StdLog("stdlog: ").Print("msg6")
-
-	expects := []string{
-		`{"lvl":"info","caller":"logger_test.go:35:TestGlobal","msg":"msg1"}`,
-		`{"lvl":"debug","caller":"logger_test.go:36:TestGlobal","msg":"msg2"}`,
-		`{"lvl":"debug","caller":"logger_test.go:37:TestGlobal","msg":"msg3"}`,
-		`{"lvl":"error","caller":"logger_test.go:38:TestGlobal","err":"error","msg":"msg4"}`,
-		`{"lvl":"error","caller":"logger_test.go:39:TestGlobal","k":"v","err":"error","msg":"msg5"}`,
-		`{"lvl":"debug","caller":"logger_test.go:40:TestGlobal","msg":"stdlog: msg6"}`,
-		"",
-	}
-	if lines := strings.Split(buf.String(), "\n"); len(lines) != len(expects) {
-		t.Errorf("expect %d lines, but got %d", len(expects), len(lines))
-	} else {
-		for i, line := range lines {
-			if line != expects[i] {
-				t.Errorf("%d: expect line '%s', but '%s'", i, expects[i], line)
-			}
-		}
-	}
+func newTestEncoder() Encoder {
+	enc := NewJSONEncoder()
+	enc.TimeKey = ""
+	return enc
 }
 
-func TestStdLog(t *testing.T) {
-	buf := bytes.NewBuffer(nil)
-	logger := New("test").SetWriter(buf).AddHooks(Caller("caller"))
-	logger.Output.encoder.(*JSONEncoder).TimeKey = ""
-
-	stdlog1 := logger.StdLog("")
-	stdlog1.Print("msg1")
-	stdlog1.Println("msg2")
-
-	stdlog2 := logger.StdLog("stdlog: ")
-	stdlog2.Print("msg3")
-
-	expects := []string{
-		`{"lvl":"debug","logger":"test","caller":"logger_test.go:68:TestStdLog","msg":"msg1"}`,
-		`{"lvl":"debug","logger":"test","caller":"logger_test.go:69:TestStdLog","msg":"msg2"}`,
-		`{"lvl":"debug","logger":"test","caller":"logger_test.go:72:TestStdLog","msg":"stdlog: msg3"}`,
-		``,
+func testStrings(t *testing.T, prefix string, expects, results []string) {
+	if len(expects) != len(results) {
+		t.Errorf("%s: expect %d lines, but got %d",
+			prefix, len(expects), len(results))
+		return
 	}
-	if lines := strings.Split(buf.String(), "\n"); len(lines) != len(expects) {
-		t.Errorf("expect %d lines, but got %d", len(expects), len(lines))
-	} else {
-		for i, line := range expects {
-			if lines[i] != line {
-				t.Errorf("%d: expect line '%s', but got '%s'", i, line, lines[i])
-			}
+
+	for i, line := range expects {
+		if results[i] != line {
+			t.Errorf("%s: %d line: expect '%s', but got '%s'",
+				prefix, i, line, results[i])
 		}
 	}
 }
 
 func TestLoggerEnabledLevel(t *testing.T) {
-	logger := New("")
-	logger.SetLevel(LvlInfo)
+	logger := New("").WithLevel(LvlWarn)
 
-	if !logger.Enabled() {
+	if logger.Enabled(LvlInfo) || !logger.Enabled(LvlError) {
 		t.Error("fail")
 	}
 
 	SetGlobalLevel(LvlDebug)
-	if !logger.Enabled() {
+	if logger.Enabled(LvlTrace) || !logger.Enabled(LvlInfo) {
 		t.Error("fail")
 	}
 
-	SetGlobalLevel(LvlWarn)
-	if logger.Enabled() {
+	SetGlobalLevel(LvlError)
+	if logger.Enabled(LvlWarn) {
 		t.Error("fail")
 	}
 
 	SetGlobalLevel(-1)
-	if logger.Enable(LvlDebug) || !logger.Enable(LvlWarn) {
+	if logger.Enabled(LvlDebug) || !logger.Enabled(LvlWarn) {
 		t.Error("fail")
 	}
 }
 
 func TestChildLoggerName(t *testing.T) {
 	parent := New("parent")
-	child1 := parent.New("child1")
-	child2 := parent.New("child2")
-	child3 := child2.New("child3")
+	child1 := parent.WithName("child1")
+	child2 := parent.WithName("child2")
+	child3 := child2.WithName("child3")
 
 	if name := child1.Name(); name != "parent.child1" {
 		t.Errorf("expect the logger name '%s', but got '%s'", "parent.child1", name)
@@ -131,20 +90,17 @@ func TestChildLoggerName(t *testing.T) {
 
 func TestLevelPanicAndFatal(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
-	enc := NewJSONEncoder()
-	enc.TimeKey = ""
-	logger := New("").SetWriter(buf).SetEncoder(enc)
+	logger := New("").WithWriter(buf).WithEncoder(newTestEncoder())
 	atexit.ExitFunc = func(code int) { fmt.Fprintf(buf, "exit with %d\n", code) }
 
-	func(l *Engine) {
+	func() {
 		defer func() {
 			if err := recover(); err != nil {
 				fmt.Fprintf(buf, "panic: %v\n", err)
 			}
 		}()
 		logger.Panic().Printf("msg1")
-	}(logger)
-
+	}()
 	logger.Fatal().Printf("msg2")
 
 	expects := []string{
@@ -154,25 +110,13 @@ func TestLevelPanicAndFatal(t *testing.T) {
 		`exit with 1`,
 		``,
 	}
-	lines := strings.Split(buf.String(), "\n")
-	if len(lines) != len(expects) {
-		t.Errorf("expect %d lines, but got %d", len(expects), len(lines))
-	} else {
-		for i, line := range expects {
-			if lines[i] != line {
-				t.Errorf("%d: expect line '%s', but got '%s'", i, line, lines[i])
-			}
-		}
-	}
+	testStrings(t, "panic_fatal", expects, strings.Split(buf.String(), "\n"))
 }
 
 func TestLevelDisable(t *testing.T) {
-	enc := NewJSONEncoder()
-	enc.TimeKey = ""
 	buf := bytes.NewBuffer(nil)
-	logger := New("").SetWriter(buf).SetEncoder(enc)
+	logger := New("").WithWriter(buf).WithEncoder(newTestEncoder()).WithLevel(LvlDisable)
 
-	logger.SetLevel(LvlDisable)
 	logger.Trace().Print("msg1")
 	logger.Debug().Print("msg2")
 	logger.Info().Print("msg3")
@@ -185,7 +129,7 @@ func TestLevelDisable(t *testing.T) {
 		t.Errorf("unexpected logs '%s'", s)
 	}
 
-	logger.SetLevel(LvlTrace)
+	logger = logger.WithLevel(LvlTrace)
 	global := GetGlobalLevel()
 	defer SetGlobalLevel(global)
 	SetGlobalLevel(LvlDisable)
@@ -204,11 +148,13 @@ func TestLevelDisable(t *testing.T) {
 	}
 }
 
-func TestLoggerSampler(t *testing.T) {
+func TestSampler(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	sample := func(name string, lvl int) bool { return lvl > LvlWarn }
-	logger := New("test").SetSampler(SamplerFunc(sample)).SetWriter(buf)
-	logger.Output.encoder.(*JSONEncoder).TimeKey = ""
+	logger := New("test").WithWriter(buf).
+		WithEncoder(newTestEncoder()).
+		WithSampler(SamplerFunc(sample))
+
 	logger.Info().Print("msg1")
 	logger.Error().Print("msg2")
 
@@ -221,18 +167,20 @@ func TestLoggerSampler(t *testing.T) {
 	GlobalDisableSampling(true)
 	logger.Info().Print("msg1")
 	logger.Error().Print("msg2")
-	expect = `{"lvl":"info","logger":"test","msg":"msg1"}` + "\n" +
-		`{"lvl":"error","logger":"test","msg":"msg2"}` + "\n"
-	if result := buf.String(); result != expect {
-		t.Errorf("expect '%s', but got '%s'", expect, result)
+
+	expects := []string{
+		`{"lvl":"info","logger":"test","msg":"msg1"}`,
+		`{"lvl":"error","logger":"test","msg":"msg2"}`,
+		``,
 	}
+	testStrings(t, "sampler", expects, strings.Split(buf.String(), "\n"))
 }
 
-func TestLogger(t *testing.T) {
+func TestJSONEncoder(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
-	logger := New("test").AppendCtx("ctxkey", "ctxvalue")
-	logger.Output.GetEncoder().(*JSONEncoder).TimeKey = ""
-	logger.SetWriter(buf)
+	logger := New("test").WithWriter(buf).
+		WithEncoder(newTestEncoder()).
+		WithContext("ctxkey", "ctxvalue")
 
 	logger.Info().Kvs("nil", nil, "bool", true).
 		Kv("int", 10).

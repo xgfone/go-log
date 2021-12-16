@@ -168,3 +168,33 @@ func ParseLevel(level string, defaultLevel ...int) int {
 		return defaultLevel[0]
 	}
 }
+
+// Enabled reports whether the given level is enabled.
+func (l Logger) Enabled(level int) bool {
+	checkLevel(level)
+	return !l.isDisabled(level)
+}
+
+func (l Logger) isDisabled(level int) bool {
+	if level == LvlDisable {
+		return true
+	}
+
+	global := GetGlobalLevel()
+	if global < LvlTrace {
+		return l.disabled(level, l.level)
+	}
+	return l.disabled(level, global)
+}
+
+func (l Logger) disabled(logLevel, minThresholdLevel int) bool {
+	if logLevel < minThresholdLevel {
+		return true
+	}
+
+	if l.sampler != nil && globalSamplingIsEnabled() {
+		return !l.sampler.Sample(l.name, logLevel)
+	}
+
+	return false
+}

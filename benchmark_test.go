@@ -20,80 +20,80 @@ import (
 	"github.com/xgfone/go-log/writer"
 )
 
-type nothingEncoder struct{}
+var (
+	bMsgFmt   = "msg: %s"
+	bMessage  = "message"
+	bCtxKey   = "key"
+	bCtxValue = "value"
+)
 
-func (enc nothingEncoder) Start(b []byte, n string, l int) []byte          { return b }
-func (enc nothingEncoder) Encode(b []byte, k string, v interface{}) []byte { return b }
-func (enc nothingEncoder) End(b []byte, m string) []byte                   { return b }
-
-func newTestJSONEncoder() Encoder {
-	enc := NewJSONEncoder()
-	enc.TimeKey = ""
-	return enc
+func newBenchLogger() Logger {
+	return New("").WithWriter(writer.Discard).WithEncoder(newTestEncoder())
 }
 
-func BenchmarkLevelDisabled(b *testing.B) {
-	logger := New("").SetWriter(writer.Discard).SetEncoder(newTestJSONEncoder())
-	logger.SetLevel(LvlError)
+func BenchmarkJSONEncoderDisabled(b *testing.B) {
+	logger := newBenchLogger().WithLevel(LvlDisable)
 
-	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info().Printf("message")
+			logger.Info().Printf(bMessage)
 		}
 	})
 }
 
-func BenchmarkNothingEncoder(b *testing.B) {
-	logger := New("").SetWriter(writer.Discard).SetEncoder(nothingEncoder{})
+func BenchmarkJSONEncoderEmpty(b *testing.B) {
+	logger := newBenchLogger()
 
-	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info().Printf("message")
+			logger.Info().Printf("")
 		}
 	})
 }
 
-func BenchmarkJSONEncoderWithoutCtxsAndKVs(b *testing.B) {
-	logger := New("").SetWriter(writer.Discard).SetEncoder(newTestJSONEncoder())
+func BenchmarkJSONEncoderInfo(b *testing.B) {
+	logger := newBenchLogger()
 
-	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info().Printf("message")
+			logger.Info().Printf(bMessage)
 		}
 	})
 }
 
 func BenchmarkJSONEncoderWith8Contexts(b *testing.B) {
-	logger := New("").SetWriter(writer.Discard).SetEncoder(newTestJSONEncoder())
-	logger = logger.AppendCtx("k1", "v1").AppendCtx("k2", "v2").
-		AppendCtx("k3", "v3").AppendCtx("k4", "v4").AppendCtx("k5", "v5").
-		AppendCtx("k6", "v6").AppendCtx("k7", "v7").AppendCtx("k8", "v8")
+	logger := newBenchLogger()
+	for i := 0; i < 8; i++ {
+		logger = logger.WithContext(bCtxKey, bCtxValue)
+	}
 
-	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info().Printf("message")
+			logger.Info().Printf(bMessage)
 		}
 	})
 }
 
 func BenchmarkJSONEncoderWith8KeyValues(b *testing.B) {
-	logger := New("").SetWriter(writer.Discard).SetEncoder(newTestJSONEncoder())
+	logger := newBenchLogger()
 
-	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Info().Kv("k1", "v1").Kv("k2", "v2").Kv("k3", "v3").
-				Kv("k4", "v4").Kv("k5", "v5").Kv("k6", "v6").Kv("k7", "v7").
-				Kv("k8", "v8").Printf("message")
+			logger.Info().
+				Kv(bCtxKey, bCtxValue).
+				Kv(bCtxKey, bCtxValue).
+				Kv(bCtxKey, bCtxValue).
+				Kv(bCtxKey, bCtxValue).
+				Kv(bCtxKey, bCtxValue).
+				Kv(bCtxKey, bCtxValue).
+				Kv(bCtxKey, bCtxValue).
+				Kv(bCtxKey, bCtxValue).
+				Printf(bMessage)
 		}
 	})
 }

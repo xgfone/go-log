@@ -20,6 +20,29 @@ import (
 	"runtime"
 )
 
+// Hook is used to add the dynamic value into the log record.
+type Hook interface {
+	Run(e *Emitter, loggerName string, level int, depth int)
+}
+
+// HookFunc is a function hook.
+type HookFunc func(e *Emitter, name string, level int, depth int)
+
+// Run implements the interface Hook.
+func (f HookFunc) Run(e *Emitter, name string, level int, depth int) {
+	f(e, name, level, depth+1)
+}
+
+// Hooks returns the hooks.
+func (l Logger) Hooks() []Hook { return l.hooks }
+
+// WithHooks returns a new logger with the hooks.
+func (l Logger) WithHooks(hooks ...Hook) Logger {
+	l = l.Clone()
+	l.hooks = append([]Hook{}, hooks...)
+	return l
+}
+
 // CallerFormatFunc is used to format the file, name and line of the caller.
 var CallerFormatFunc = func(file, name string, line int) string {
 	name = filepath.Ext(name)
@@ -31,35 +54,10 @@ var CallerFormatFunc = func(file, name string, line int) string {
 
 // Caller returns a callback function that returns the caller "file:line".
 func Caller(key string) Hook {
-	return HookFunc(func(logger Logger, name string, level, depth int) {
+	return HookFunc(func(e *Emitter, name string, level, depth int) {
 		if pc, file, line, ok := runtime.Caller(depth + 1); ok {
 			f := runtime.FuncForPC(pc)
-			logger.Kv(key, CallerFormatFunc(file, f.Name(), line))
+			e.Kv(key, CallerFormatFunc(file, f.Name(), line))
 		}
 	})
-}
-
-// Hook is used to add the dynamic value into the log record.
-type Hook interface {
-	Run(logger Logger, loggerName string, level int, depth int)
-}
-
-// HookFunc is a function hook.
-type HookFunc func(logger Logger, name string, level int, depth int)
-
-// Run implements the interface Hook.
-func (f HookFunc) Run(logger Logger, name string, level int, depth int) {
-	f(logger, name, level, depth+1)
-}
-
-// AddHooks appends the hooks and returns itself.
-func (e *Engine) AddHooks(hooks ...Hook) *Engine {
-	e.hooks = append(e.hooks, hooks...)
-	return e
-}
-
-// ResetHooks resets the hooks and returns itself.
-func (e *Engine) ResetHooks(hooks ...Hook) *Engine {
-	e.hooks = append([]Hook{}, hooks...)
-	return e
 }

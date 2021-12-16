@@ -111,7 +111,7 @@ func (enc *JSONEncoder) Start(buf []byte, name string, level int) []byte {
 
 	// Time
 	if len(enc.TimeKey) > 0 {
-		buf = enc.appendString(buf, enc.TimeKey)
+		buf = AppendJSONString(buf, enc.TimeKey)
 		buf = append(buf, ':')
 		buf = enc.appendTime(buf, Now())
 		buf = append(buf, ',')
@@ -119,21 +119,21 @@ func (enc *JSONEncoder) Start(buf []byte, name string, level int) []byte {
 
 	// Level
 	if len(enc.LevelKey) > 0 {
-		buf = enc.appendString(buf, enc.LevelKey)
+		buf = AppendJSONString(buf, enc.LevelKey)
 		buf = append(buf, ':')
 		if enc.LevelFormatFunc == nil {
-			buf = enc.appendString(buf, FormatLevel(level))
+			buf = AppendJSONString(buf, FormatLevel(level))
 		} else {
-			buf = enc.appendString(buf, enc.LevelFormatFunc(level))
+			buf = AppendJSONString(buf, enc.LevelFormatFunc(level))
 		}
 		buf = append(buf, ',')
 	}
 
 	// Logger
 	if len(enc.LoggerKey) > 0 && len(name) > 0 {
-		buf = enc.appendString(buf, enc.LoggerKey)
+		buf = AppendJSONString(buf, enc.LoggerKey)
 		buf = append(buf, ':')
-		buf = enc.appendString(buf, name)
+		buf = AppendJSONString(buf, name)
 		buf = append(buf, ',')
 	}
 
@@ -150,7 +150,7 @@ func (enc *JSONEncoder) Start(buf []byte, name string, level int) []byte {
 //   - interface{ EncodeJSON(dst []byte) []byte }
 //
 func (enc *JSONEncoder) Encode(buf []byte, key string, value interface{}) []byte {
-	buf = enc.appendString(buf, key)
+	buf = AppendJSONString(buf, key)
 	buf = append(buf, ':')
 	buf = enc.appendAny(buf, value)
 	buf = append(buf, ',')
@@ -160,9 +160,9 @@ func (enc *JSONEncoder) Encode(buf []byte, key string, value interface{}) []byte
 // End implements the interface Encoder.
 func (enc *JSONEncoder) End(buf []byte, msg string) []byte {
 	// Msg
-	buf = enc.appendString(buf, enc.MsgKey)
+	buf = AppendJSONString(buf, enc.MsgKey)
 	buf = append(buf, ':')
-	buf = enc.appendString(buf, msg)
+	buf = AppendJSONString(buf, msg)
 
 	// JSON End
 	buf = append(buf, '}')
@@ -182,26 +182,6 @@ func (enc *JSONEncoder) appendTime(buf []byte, t time.Time) []byte {
 		buf = enc.TimeFormatFunc(buf, t)
 	}
 	return buf
-}
-
-func (enc *JSONEncoder) appendString(buf []byte, s string) []byte {
-	buf = append(buf, '"')
-
-	// Loop through each character in the string.
-	for i := 0; i < len(s); i++ {
-		// Check if the character needs encoding. Control characters, slashes,
-		// and the double quote need json encoding. Bytes above the ascii
-		// boundary needs utf8 encoding.
-		if !noEscapeTable[s[i]] {
-			// We encountered a character that needs to be encoded. Switch
-			// to complex version of the algorithm.
-			buf = appendStringComplex(buf, s, i)
-			return append(buf, '"')
-		}
-	}
-
-	buf = append(buf, s...)
-	return append(buf, '"')
 }
 
 type bufferWriter struct{ buf []byte }
@@ -270,7 +250,7 @@ func (enc *JSONEncoder) appendAny(buf []byte, any interface{}) []byte {
 		buf = strconv.AppendFloat(buf, v, 'f', -1, 64)
 
 	case string:
-		buf = enc.appendString(buf, v)
+		buf = AppendJSONString(buf, v)
 
 	case interface{ EncodeJSON([]byte) []byte }:
 		buf = v.EncodeJSON(buf)
@@ -281,14 +261,14 @@ func (enc *JSONEncoder) appendAny(buf []byte, any interface{}) []byte {
 		buf = w.buf
 
 	case error:
-		buf = enc.appendString(buf, v.Error())
+		buf = AppendJSONString(buf, v.Error())
 
 	case fmt.Stringer:
-		buf = enc.appendString(buf, v.String())
+		buf = AppendJSONString(buf, v.String())
 
 	case json.Marshaler:
 		if data, err := v.MarshalJSON(); err != nil {
-			buf = enc.appendString(buf, fmt.Sprintf("JSONEncoderError: %s", err.Error()))
+			buf = AppendJSONString(buf, fmt.Sprintf("JSONEncoderError: %s", err.Error()))
 		} else {
 			buf = append(buf, data...)
 		}
@@ -309,7 +289,7 @@ func (enc *JSONEncoder) appendAny(buf []byte, any interface{}) []byte {
 			if i > 0 {
 				buf = append(buf, ',')
 			}
-			buf = enc.appendString(buf, _v)
+			buf = AppendJSONString(buf, _v)
 		}
 		buf = append(buf, ']')
 
@@ -362,7 +342,7 @@ func (enc *JSONEncoder) appendAny(buf []byte, any interface{}) []byte {
 			}
 			i++
 
-			buf = enc.appendString(buf, key)
+			buf = AppendJSONString(buf, key)
 			buf = append(buf, ':')
 			buf = enc.appendAny(buf, value)
 		}
@@ -377,21 +357,42 @@ func (enc *JSONEncoder) appendAny(buf []byte, any interface{}) []byte {
 			}
 			i++
 
-			buf = enc.appendString(buf, key)
+			buf = AppendJSONString(buf, key)
 			buf = append(buf, ':')
-			buf = enc.appendString(buf, value)
+			buf = AppendJSONString(buf, value)
 		}
 		buf = append(buf, '}')
 
 	default:
 		if data, err := json.Marshal(v); err != nil {
-			buf = enc.appendString(buf, fmt.Sprintf("JSONEncoderError: %s", err.Error()))
+			buf = AppendJSONString(buf, fmt.Sprintf("JSONEncoderError: %s", err.Error()))
 		} else {
 			buf = append(buf, data...)
 		}
 	}
 
 	return buf
+}
+
+// AppendJSONString appends the string s as JSON into dst, then returns dst.
+func AppendJSONString(dst []byte, s string) []byte {
+	dst = append(dst, '"')
+
+	// Loop through each character in the string.
+	for i := 0; i < len(s); i++ {
+		// Check if the character needs encoding. Control characters, slashes,
+		// and the double quote need json encoding. Bytes above the ascii
+		// boundary needs utf8 encoding.
+		if !noEscapeTable[s[i]] {
+			// We encountered a character that needs to be encoded. Switch
+			// to complex version of the algorithm.
+			dst = appendStringComplex(dst, s, i)
+			return append(dst, '"')
+		}
+	}
+
+	dst = append(dst, s...)
+	return append(dst, '"')
 }
 
 // appendStringComplex is used by appendString to take over an in progress JSON

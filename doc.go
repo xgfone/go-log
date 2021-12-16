@@ -48,7 +48,7 @@
 //       if err == nil {
 //           return
 //       }
-//       log.Log(log.LvlError, 1).Kvs(kvs...).Kv("err", err).Printf(msg)
+//       log.Level(log.LvlError, 1).Kvs(kvs...).Kv("err", err).Printf(msg)
 //   }
 //
 //   func main() {
@@ -59,33 +59,28 @@
 //
 //       // Configure the logger.
 //       writer := log.FileWriter(logfile, "100M", 100)
-//       log.SetWriter(writer).SetLevel(log.ParseLevel(loglevel))
 //       defer writer.Close()
+//       log.SetWriter(writer)
+//       log.SetLevel(log.ParseLevel(loglevel))
 //
 //       // Emit the log.
-//       log.Print("msg1")
-//       log.Printf("msg%d", 2)
-//       log.Kv("key1", "value1").Print("msg3")
-//       log.Debug().Kv("key2", "value2").Print("msg4") // no log output.
-//       log.Info().Kv("key3", "value3").Print("msg5")
-//       log.Log(log.LvlInfo, 0).Kv("key4", "value4").Printf("msg6")
-//       logError(nil, "msg7", "key5", "value5", "key6", 666, "key7", "value7")
-//       logError(errors.New("error"), "msg8", "key8", 888, "key9", "value9")
+//       log.Debug().Kv("key1", "value1").Print("msg1") // no log output.
+//       log.Info().Kv("key2", "value2").Print("msg2")
+//       log.Level(log.LvlInfo, 0).Kv("key3", "value3").Printf("msg3")
+//       logError(nil, "msg4", "key4", "value4", "key5", 555, "key6", "value6")
+//       logError(errors.New("error"), "msg7", "key8", 888, "key9", "value9")
 //
 //       // For Clild Logger
 //       child1Logger := log.WithName("child1")
-//       child2Logger := child1Logger.New("child2")
-//       child1Logger.Kv("ckey1", "cvalue1").Print("msg9")
-//       child2Logger.Printf("msg10")
+//       child2Logger := child1Logger.WithName("child2")
+//       child1Logger.Info().Kv("ckey1", "cvalue1").Print("msg8")
+//       child2Logger.Info().Kv("ckey2", "cvalue2").Printf("msg9")
 //
 //       // $ go run main.go
-//       // {"t":"2021-12-12T11:41:11.2844234+08:00","lvl":"info","caller":"main.go:32:main","msg":"msg1"}
-//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:33:main","msg":"msg2"}
-//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:34:main","key1":"value1","msg":"msg3"}
-//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:36:main","key3":"value3","msg":"msg5"}
-//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"info","caller":"main.go:37:main","key4":"value4","msg":"msg6"}
-//       // {"t":"2021-12-12T11:41:11.2918549+08:00","lvl":"error","caller":"main.go:39:main","key8":888,"key9":"value9","err":"error","msg":"msg8"}
-//       // {"t":"2021-12-12T12:22:15.2466635+08:00","lvl":"info","logger":"child1","caller":"main.go:44:main","ckey1":"cvalue1","msg":"msg9"}
-//       // {"t":"2021-12-12T12:22:15.2466635+08:00","lvl":"info","logger":"child1.child2","caller":"main.go:45:main","msg":"msg10"}
+//       // {"t":"2021-12-17T00:04:44.8609884+08:00","lvl":"info","caller":"main.go:34:main","key2":"value2","msg":"msg2"}
+//       // {"t":"2021-12-17T00:04:44.8660577+08:00","lvl":"info","caller":"main.go:35:main","key3":"value3","msg":"msg3"}
+//       // {"t":"2021-12-17T00:04:44.8671207+08:00","lvl":"error","caller":"main.go:37:main","key8":888,"key9":"value9","err":"error","msg":"msg7"}
+//       // {"t":"2021-12-17T00:04:44.8671207+08:00","lvl":"info","logger":"child1","caller":"main.go:42:main","ckey1":"cvalue1","msg":"msg8"}
+//       // {"t":"2021-12-17T00:04:44.8678731+08:00","lvl":"info","logger":"child1.child2","caller":"main.go:43:main","ckey2":"cvalue2","msg":"msg9"}
 //   }
 package log

@@ -21,11 +21,13 @@ import (
 )
 
 func ExampleLogger() {
-	// For test, we disable the log time
-	log.DefaultLogger.Output.GetEncoder().(*log.JSONEncoder).TimeKey = ""
-	log.DefaultLogger.SetWriter(os.Stdout)
+	enc := log.NewJSONEncoder()
+	enc.TimeKey = "" // For test, we disable the log time
+	_logger := log.New("").WithHooks(log.Caller("caller"))
+	_logger.SetWriter(os.Stdout)
+	_logger.SetEncoder(enc)
 
-	logger := NewLogger(nil, 0)
+	logger := NewLogger(_logger, 0)
 	logger.Tracef("%s msg", "trace")
 	logger.Debugf("%s msg", "debug")
 	logger.Infof("%s msg", "info")
@@ -34,9 +36,9 @@ func ExampleLogger() {
 	logger.Alertf("%s msg", "alert")
 
 	// Output:
-	// {"lvl":"debug","caller":"logf_test.go:30:ExampleLogger","msg":"debug msg"}
-	// {"lvl":"info","caller":"logf_test.go:31:ExampleLogger","msg":"info msg"}
-	// {"lvl":"warn","caller":"logf_test.go:32:ExampleLogger","msg":"warn msg"}
-	// {"lvl":"error","caller":"logf_test.go:33:ExampleLogger","msg":"error msg"}
-	// {"lvl":"alert","caller":"logf_test.go:34:ExampleLogger","msg":"alert msg"}
+	// {"lvl":"debug","caller":"logf_test.go:32:ExampleLogger","msg":"debug msg"}
+	// {"lvl":"info","caller":"logf_test.go:33:ExampleLogger","msg":"info msg"}
+	// {"lvl":"warn","caller":"logf_test.go:34:ExampleLogger","msg":"warn msg"}
+	// {"lvl":"error","caller":"logf_test.go:35:ExampleLogger","msg":"error msg"}
+	// {"lvl":"alert","caller":"logf_test.go:36:ExampleLogger","msg":"alert msg"}
 }

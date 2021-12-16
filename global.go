@@ -20,103 +20,83 @@ import (
 )
 
 // DefaultLogger is the default global logger.
-var DefaultLogger = New("").AddHooks(Caller("caller"))
+var DefaultLogger = New("").WithHooks(Caller("caller"))
 
 // StdLog is equal to DefaultLogger.StdLog(prefix).
 func StdLog(prefix string) *log.Logger {
-	return log.New(DefaultLogger.Clone().SetDepth(2), prefix, 0)
+	return log.New(DefaultLogger.WithDepth(2), prefix, 0)
 }
+
+// SetWriter is eqaul to DefaultLogger.SetWriter(w).
+func SetWriter(w io.Writer) { DefaultLogger.SetWriter(w) }
+
+// SetEncoder is eqaul to DefaultLogger.SetEncoder(enc).
+func SetEncoder(enc Encoder) { DefaultLogger.SetEncoder(enc) }
+
+// SetLevel resets the level of the default logger.
+func SetLevel(level int) { checkLevel(level); DefaultLogger.level = level }
 
 // GetLevel is equal to DefaultLogger.GetLevel().
 func GetLevel() int { return DefaultLogger.GetLevel() }
 
-// SetDepth is equal to DefaultLogger.SetDepth(depth).
-func SetDepth(depth int) *Engine { return DefaultLogger.SetDepth(depth) }
-
-// SetLevel is equal to DefaultLogger.SetLevel(level).
-func SetLevel(level int) *Engine { return DefaultLogger.SetLevel(level) }
-
-// SetWriter is eqaul to DefaultLogger.SetWriter(w).
-func SetWriter(w io.Writer) *Engine { return DefaultLogger.SetWriter(w) }
-
-// SetEncoder is eqaul to DefaultLogger.SetEncoder(enc).
-func SetEncoder(enc Encoder) *Engine { return DefaultLogger.SetEncoder(enc) }
-
-// AddHooks is equal to DefaultLogger.AddHooks(hooks...).
-func AddHooks(hooks ...Hook) *Engine { return DefaultLogger.AddHooks(hooks...) }
-
-// ResetHooks is equal to DefaultLogger.ResetHooks(hooks...).
-func ResetHooks(hooks ...Hook) *Engine { return DefaultLogger.ResetHooks(hooks...) }
-
-// ResetCtxs is equal to DefaultLogger.ResetCtxs(kvs...).
-func ResetCtxs(kvs ...interface{}) *Engine { return DefaultLogger.ResetCtxs(kvs...) }
-
-// AppendCtxs is equal to DefaultLogger.AppendCtx(kvs...).
-func AppendCtxs(kvs ...interface{}) *Engine {
-	return DefaultLogger.AppendCtxs(kvs...)
-}
-
-// AppendCtx is equal to DefaultLogger.AppendCtx(key, value).
-func AppendCtx(key string, value interface{}) *Engine {
-	return DefaultLogger.AppendCtx(key, value)
-}
-
 // Clone is equal to DefaultLogger.Clone().
-func Clone() *Engine { return DefaultLogger.Clone() }
+func Clone() Logger { return DefaultLogger.Clone() }
 
 // WithName is equal to DefaultLogger.New(name).
-func WithName(name string) *Engine { return DefaultLogger.New(name) }
+func WithName(name string) Logger { return DefaultLogger.WithName(name) }
 
-// Log is equal to DefaultLogger.Logger(level, depth).
-func Log(level, depth int) Logger { return DefaultLogger.Logger(level, depth+1) }
+// WithDepth is equal to DefaultLogger.WithDepth(depth).
+func WithDepth(depth int) Logger { return DefaultLogger.WithDepth(depth) }
+
+// WithLevel is equal to DefaultLogger.WithLevel(level).
+func WithLevel(level int) Logger { return DefaultLogger.WithLevel(level) }
+
+// WithHooks is equal to DefaultLogger.WithHooks(hooks...).
+func WithHooks(hooks ...Hook) Logger { return DefaultLogger.WithHooks(hooks...) }
+
+// WithContext is equal to DefaultLogger.WithContext(key, value).
+func WithContext(key string, value interface{}) Logger {
+	return DefaultLogger.WithContext(key, value)
+}
+
+// WithContexts is equal to DefaultLogger.WithContexts(kvs...).
+func WithContexts(kvs ...interface{}) Logger {
+	return DefaultLogger.WithContexts(kvs...)
+}
+
+// ResetContexts is equal to DefaultLogger.ResetContexts(kvs...).
+func ResetContexts(kvs ...interface{}) { DefaultLogger.ResetContexts(kvs...) }
+
+// Level is equal to DefaultLogger.Level(level, depth).
+func Level(level, depth int) *Emitter { return DefaultLogger.Level(level, depth+1) }
 
 // Trace is equal to DefaultLogger.Trace().
-func Trace() Logger { return DefaultLogger.getLogger(LvlTrace, 1) }
+func Trace() *Emitter { return DefaultLogger.getEmitter(LvlTrace, 1) }
 
 // Debug is equal to DefaultLogger.Debug().
-func Debug() Logger { return DefaultLogger.getLogger(LvlDebug, 1) }
+func Debug() *Emitter { return DefaultLogger.getEmitter(LvlDebug, 1) }
 
 // Info is equal to DefaultLogger.Info().
-func Info() Logger { return DefaultLogger.getLogger(LvlInfo, 1) }
+func Info() *Emitter { return DefaultLogger.getEmitter(LvlInfo, 1) }
 
 // Warn is equal to DefaultLogger.Warn().
-func Warn() Logger { return DefaultLogger.getLogger(LvlWarn, 1) }
+func Warn() *Emitter { return DefaultLogger.getEmitter(LvlWarn, 1) }
 
 // Error is equal to DefaultLogger.Error().
-func Error() Logger { return DefaultLogger.getLogger(LvlError, 1) }
+func Error() *Emitter { return DefaultLogger.getEmitter(LvlError, 1) }
 
 // Alert is equal to DefaultLogger.Alert()).
-func Alert() Logger { return DefaultLogger.getLogger(LvlAlert, 1) }
+func Alert() *Emitter { return DefaultLogger.getEmitter(LvlAlert, 1) }
 
 // Panic is equal to DefaultLogger.Panic().
-func Panic() Logger { return DefaultLogger.getLogger(LvlPanic, 1) }
+func Panic() *Emitter { return DefaultLogger.getEmitter(LvlPanic, 1) }
 
 // Fatal is equal to DefaultLogger.Fatal().
-func Fatal() Logger { return DefaultLogger.getLogger(LvlFatal, 1) }
+func Fatal() *Emitter { return DefaultLogger.getEmitter(LvlFatal, 1) }
 
-// Kv is equal to DefaultLogger.Kv(key, value).
-func Kv(key string, value interface{}) Logger {
-	return DefaultLogger.getLogger(DefaultLogger.level, 1).Kv(key, value)
-}
-
-// Kvs is equal to DefaultLogger.Kvs(key, value).
-func Kvs(kvs ...interface{}) Logger {
-	return DefaultLogger.getLogger(DefaultLogger.level, 1).Kvs(kvs...)
-}
-
-// Printf is equal to DefaultLogger.Printf(msg, args...).
-func Printf(msg string, args ...interface{}) {
-	DefaultLogger.getLogger(DefaultLogger.level, 1).Printf(msg, args...)
-}
-
-// Print is equal to DefaultLogger.Print(msg, args...).
-func Print(args ...interface{}) {
-	DefaultLogger.getLogger(DefaultLogger.level, 1).Print(args...)
-}
-
-// Ef is equal to DefaultLogger.Error().Kv("err", err).Printf(msg, args...).
-func Ef(err error, msg string, args ...interface{}) {
-	DefaultLogger.getLogger(LvlError, 1).Kv("err", err).Printf(msg, args...)
+// Ef is equal to DefaultLogger.Error().Kv("err", err).Printf(format, args...).
+func Ef(err error, format string, args ...interface{}) {
+	DefaultLogger.getEmitter(LvlError, 1).Kv("err", err).Printf(format, args...)
 }
 
 // IfErr logs the message and key-values with the ERROR level
@@ -130,5 +110,5 @@ func ifErr(err interface{}, msg string, kvs ...interface{}) {
 	if err == nil {
 		return
 	}
-	DefaultLogger.getLogger(LvlError, 2).Kvs(kvs...).Kv("err", err).Printf(msg)
+	DefaultLogger.getEmitter(LvlError, 2).Kvs(kvs...).Kv("err", err).Printf(msg)
 }

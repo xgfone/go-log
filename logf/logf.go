@@ -29,48 +29,45 @@ type Logger interface {
 }
 
 // NewLogger returns a new Logger based on the format.
-func NewLogger(log *glog.Engine, depth int) Logger {
-	if log == nil {
-		log = glog.DefaultLogger
-	}
-	return logger{Engine: log, depth: fixDepth(depth)}
+func NewLogger(logger glog.Logger, depth int) Logger {
+	return loggerf{Logger: logger, depth: fixDepth(depth)}
 }
 
-type logger struct {
-	*glog.Engine
+type loggerf struct {
+	glog.Logger
 	depth int
 }
 
 var fixDepth = func(depth int) int { return depth + 1 }
 
-func (l logger) Tracef(format string, args ...interface{}) {
-	l.Engine.Logger(glog.LvlTrace, l.depth).Printf(format, args...)
+func (l loggerf) Tracef(format string, args ...interface{}) {
+	l.Level(glog.LvlTrace, l.depth).Printf(format, args...)
 }
 
-func (l logger) Debugf(format string, args ...interface{}) {
-	l.Engine.Logger(glog.LvlDebug, l.depth).Printf(format, args...)
+func (l loggerf) Debugf(format string, args ...interface{}) {
+	l.Level(glog.LvlDebug, l.depth).Printf(format, args...)
 }
 
-func (l logger) Infof(format string, args ...interface{}) {
-	l.Engine.Logger(glog.LvlInfo, l.depth).Printf(format, args...)
+func (l loggerf) Infof(format string, args ...interface{}) {
+	l.Level(glog.LvlInfo, l.depth).Printf(format, args...)
 }
 
-func (l logger) Warnf(format string, args ...interface{}) {
-	l.Engine.Logger(glog.LvlWarn, l.depth).Printf(format, args...)
+func (l loggerf) Warnf(format string, args ...interface{}) {
+	l.Level(glog.LvlWarn, l.depth).Printf(format, args...)
 }
 
-func (l logger) Errorf(format string, args ...interface{}) {
-	l.Engine.Logger(glog.LvlError, l.depth).Printf(format, args...)
+func (l loggerf) Errorf(format string, args ...interface{}) {
+	l.Level(glog.LvlError, l.depth).Printf(format, args...)
 }
 
-func (l logger) Alertf(format string, args ...interface{}) {
-	l.Engine.Logger(glog.LvlAlert, l.depth).Printf(format, args...)
+func (l loggerf) Alertf(format string, args ...interface{}) {
+	l.Level(glog.LvlAlert, l.depth).Printf(format, args...)
 }
 
-func (l logger) Panicf(format string, args ...interface{}) {
-	l.Engine.Logger(glog.LvlPanic, l.depth).Printf(format, args...)
+func (l loggerf) Panicf(format string, args ...interface{}) {
+	l.Level(glog.LvlPanic, l.depth).Printf(format, args...)
 }
 
-func (l logger) Fatalf(format string, args ...interface{}) {
-	l.Engine.Logger(glog.LvlFatal, l.depth).Printf(format, args...)
+func (l loggerf) Fatalf(format string, args ...interface{}) {
+	l.Level(glog.LvlFatal, l.depth).Printf(format, args...)
 }

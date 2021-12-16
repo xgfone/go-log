@@ -15,181 +15,142 @@
 package log
 
 import (
-	"fmt"
-	"sync"
+	"log"
+	"os"
+	"strings"
 
-	"github.com/xgfone/go-atexit"
+	"github.com/xgfone/go-log/writer"
 )
 
-// LevelLogger is the logger interface with the level to emit the log.
-type LevelLogger interface {
-	Level(level int) Logger
-	Logger
-}
+// Logger is the structured logger based on the key-value.
+type Logger struct {
+	*Output
 
-// Logger is the logger interface to emit the log.
-type Logger interface {
-	// Enabled reports whether the logger is enabled.
-	Enabled() bool
-
-	// Kv and Kvs append the key-value contexts and return the logger itself.
-	Kv(key string, value interface{}) Logger
-	Kvs(kvs ...interface{}) Logger
-
-	// Print and Printf log the message and end the logger.
-	Printf(msg string, args ...interface{})
-	Print(args ...interface{})
-}
-
-type logger struct {
-	writer  LevelWriter
-	encoder Encoder
-	buffer  []byte
+	name    string
 	level   int
+	depth   int
+	sampler Sampler
+
+	// Key-Value Context
+	hooks []Hook
+	ctxs  []interface{}
+	ctx   []byte
 }
 
-func (l *logger) Enabled() bool { return l != nil }
-
-func (l *logger) Kv(key string, value interface{}) Logger {
-	if l != nil {
-		l.buffer = l.encoder.Encode(l.buffer, key, value)
+// New creates a new root logger, which encodes the log message as JSON
+// and output the encoded log to os.Stderr.
+func New(name string) Logger {
+	return Logger{
+		name:   name,
+		level:  LvlDebug,
+		Output: NewOutput(writer.SafeWriter(os.Stderr), nil),
 	}
+}
+
+// Clone clones itself and returns a new one.
+func (l Logger) Clone() Logger {
+	return Logger{
+		Output: l.Output,
+
+		name:    l.name,
+		level:   l.level,
+		depth:   l.depth,
+		sampler: l.sampler,
+
+		hooks: append([]Hook{}, l.hooks...),
+		ctxs:  append([]interface{}{}, l.ctxs...),
+		ctx:   append([]byte{}, l.ctx...),
+	}
+}
+
+// Name returns the name of the current logger.
+func (l Logger) Name() string { return l.name }
+
+// Depth returns the stack depth of the current logger.
+func (l Logger) Depth() int { return l.depth }
+
+// GetLevel returns the level of the current logger.
+func (l Logger) GetLevel() int { return l.level }
+
+// WithName returns a new logger with the name.
+//
+//   - If name is empty, the name of the new logger is equal to l.name.
+//   - If both name and l.name are not empty, it is equal to l.Name()+"."+name.
+//
+func (l Logger) WithName(name string) Logger {
+	if len(name) == 0 {
+		name = l.name
+	} else if len(l.name) > 0 {
+		name = strings.Join([]string{l.name, name}, ".")
+	}
+
+	l = l.Clone()
+	l.name = name
 	return l
 }
 
-func (l *logger) Kvs(kvs ...interface{}) Logger {
-	if l != nil {
-		_len := len(kvs)
-		if _len%2 != 0 {
-			panic("the length of the key-value log contexts is not even")
-		}
-		for i := 0; i < _len; i += 2 {
-			l.Kv(kvs[i].(string), kvs[i+1])
-		}
-	}
+// WithDepth returns a new logger with the depth of the stack out of the logger.
+func (l Logger) WithDepth(depth int) Logger {
+	l = l.Clone()
+	l.depth = depth
 	return l
 }
 
-func (l *logger) Print(args ...interface{}) {
-	if l == nil {
-		return
-	}
-
-	l.emit(fmt.Sprint(args...))
-}
-
-func (l *logger) Printf(msg string, args ...interface{}) {
-	if l == nil {
-		return
-	}
-
-	if len(args) == 0 {
-		l.emit(msg)
-	} else {
-		l.emit(fmt.Sprintf(msg, args...))
-	}
-}
-
-func (l *logger) emit(msg string) {
-	level := l.level
-	l.buffer = l.encoder.End(l.buffer, msg)
-	l.writer.WriteLevel(level, l.buffer)
-	l.buffer = l.buffer[:0]
-	loggerPool.Put(l)
-
-	if level == LvlFatal {
-		atexit.Exit(1)
-	} else if level >= LvlPanic {
-		panic(msg)
-	}
-}
-
-// DefaultBufferCap is the default capacity of the buffer to encode the log.
-var DefaultBufferCap = 256
-
-var loggerPool = sync.Pool{New: func() interface{} {
-	return &logger{buffer: make([]byte, 0, DefaultBufferCap)}
-}}
-
-func newLogger(engine *Engine, level int, depth int) *logger {
-	if engine.isDisabled(level) {
-		return nil
-	}
-
-	l := loggerPool.Get().(*logger)
+// WithLevel returns a new logger with the level.
+func (l Logger) WithLevel(level int) Logger {
+	checkLevel(level)
+	l = l.Clone()
 	l.level = level
-	l.writer = engine.Output.writer
-	l.encoder = engine.Output.encoder
-
-	l.buffer = l.encoder.Start(l.buffer, engine.name, l.level)
-	l.buffer = append(l.buffer, engine.ctx...)
-	for i, _len := 0, len(engine.hooks); i < _len; i++ {
-		engine.hooks[i].Run(l, engine.name, level, depth+2)
-	}
-
 	return l
 }
 
-var _ LevelLogger = &Engine{}
+// Contexts returns the key-value contexts.
+func (l Logger) Contexts() (kvs []interface{}) { return l.ctxs }
 
-// Kv implements the interface Logger.
-func (e *Engine) Kv(key string, value interface{}) Logger {
-	return newLogger(e, e.level, e.depth).Kv(key, value)
+// WithContext returns a new logger that appends the key-value context.
+func (l Logger) WithContext(key string, value interface{}) Logger {
+	l = l.Clone()
+	l.ctx = l.Output.encoder.Encode(l.ctx, key, value)
+	l.ctxs = append(l.ctxs, key, value)
+	return l
 }
 
-// Kvs implements the interface Logger.
-func (e *Engine) Kvs(kvs ...interface{}) Logger {
-	return newLogger(e, e.level, e.depth).Kvs(kvs...)
+// WithContexts returns a new logger that appends a set of the key-value contexts.
+func (l Logger) WithContexts(kvs ...interface{}) Logger {
+	l = l.Clone()
+	l.appendContexts(kvs...)
+	return l
 }
 
-// Print implements the interface Logger.
-func (e *Engine) Print(args ...interface{}) {
-	newLogger(e, e.level, e.depth).Print(args...)
+// ResetContexts clears the old key-value contexts and resets it to kvs.
+func (l *Logger) ResetContexts(kvs ...interface{}) {
+	l.ctx, l.ctxs = l.ctx[:0], l.ctxs[:0]
+	l.appendContexts(kvs...)
 }
 
-// Printf implements the interface Logger.
-func (e *Engine) Printf(msg string, args ...interface{}) {
-	newLogger(e, e.level, e.depth).Printf(msg, args...)
+func (l *Logger) appendContexts(kvs ...interface{}) {
+	_len := len(kvs)
+	if _len%2 != 0 {
+		panic("the length of the key-value log contexts is not even")
+	}
+
+	for i := 0; i < _len; i += 2 {
+		l.ctx = l.Output.encoder.Encode(l.ctx, kvs[i].(string), kvs[i+1])
+	}
+	l.ctxs = append(l.ctxs, kvs...)
 }
 
-func (e *Engine) getLogger(level, depth int) Logger {
-	return newLogger(e, level, e.depth+depth)
+// Write implements the interface io.Writer.
+func (l Logger) Write(p []byte) (n int, err error) {
+	n = len(p)
+	if n > 0 && p[n-1] == '\n' {
+		p = p[:n-1]
+	}
+	l.getEmitter(l.level, 1).Printf(string(p))
+	return
 }
 
-// Logger returns a logger with the level and the additional stack depth
-// to emit the log.
-func (e *Engine) Logger(level, depth int) Logger {
-	checkLevel(level)
-	return newLogger(e, level, e.depth+depth)
+// StdLog returns a new log.Logger based on the current logger engine.
+func (l Logger) StdLog(prefix string) *log.Logger {
+	return log.New(l.WithDepth(2), prefix, 0)
 }
-
-// Level implements the interface LevelLogger to emit the log based on the level,
-// which is equal to e.Logger(level, 0).
-func (e *Engine) Level(level int) Logger {
-	checkLevel(level)
-	return newLogger(e, level, e.depth)
-}
-
-// Trace is equal to e.Level(LvlTrace).
-func (e *Engine) Trace() Logger { return newLogger(e, LvlTrace, e.depth) }
-
-// Debug is equal to e.Level(LvlDebug).
-func (e *Engine) Debug() Logger { return newLogger(e, LvlDebug, e.depth) }
-
-// Info is equal to e.Level(LvlInfo).
-func (e *Engine) Info() Logger { return newLogger(e, LvlInfo, e.depth) }
-
-// Warn is equal to e.Level(LvlWarn).
-func (e *Engine) Warn() Logger { return newLogger(e, LvlWarn, e.depth) }
-
-// Error is equal to e.Level(LvlError).
-func (e *Engine) Error() Logger { return newLogger(e, LvlError, e.depth) }
-
-// Alert is equal to e.Level(LvlAlert).
-func (e *Engine) Alert() Logger { return newLogger(e, LvlAlert, e.depth) }
-
-// Panic is equal to e.Panic(LvlPanic).
-func (e *Engine) Panic() Logger { return newLogger(e, LvlPanic, e.depth) }
-
-// Fatal is equal to e.Level(LvlFatal).
-func (e *Engine) Fatal() Logger { return newLogger(e, LvlFatal, e.depth) }
