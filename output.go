@@ -18,7 +18,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/xgfone/go-log/writer"
 )
@@ -157,11 +156,11 @@ type werrors []error
 
 func (es werrors) Errors() []error { return es }
 func (es werrors) Error() string {
-	var buf strings.Builder
+	buf := make([]byte, 0, 128)
 	for i, _len := 0, len(es); i < _len; i++ {
-		buf.WriteString(es[i].Error())
+		buf = append(buf, es[i].Error()...)
 	}
-	return buf.String()
+	return string(buf)
 }
 
 func (w lvlSplitWriter) Close() (err error) {
