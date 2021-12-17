@@ -18,6 +18,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/xgfone/go-log/writer"
 )
@@ -124,4 +125,58 @@ func FileWriter(filename, filesize string, filenum int) io.WriteCloser {
 	}
 
 	return writer.NewSizedRotatingFile(filename, int(size), filenum)
+}
+
+/// ----------------------------------------------------------------------- ///
+
+// LevelSplitWriter returns a writer to write the log into the different writer
+// by the level.
+func LevelSplitWriter(defaultWriter io.Writer, levelWriters map[int]io.Writer) LevelWriter {
+	lws := make(map[int]LevelWriter, len(levelWriters))
+	for level, lw := range levelWriters {
+		lws[level] = ToLevelWriter(lw)
+	}
+	return lvlSplitWriter{dw: ToLevelWriter(defaultWriter), lws: lws}
+}
+
+type lvlSplitWriter struct {
+	lws map[int]LevelWriter
+	dw  LevelWriter
+}
+
+func (w lvlSplitWriter) Write(p []byte) (int, error) { return w.dw.Write(p) }
+
+func (w lvlSplitWriter) WriteLevel(level int, p []byte) (int, error) {
+	if lw, ok := w.lws[level]; ok {
+		return lw.WriteLevel(level, p)
+	}
+	return w.dw.WriteLevel(level, p)
+}
+
+type werrors []error
+
+func (es werrors) Errors() []error { return es }
+func (es werrors) Error() string {
+	var buf strings.Builder
+	for i, _len := 0, len(es); i < _len; i++ {
+		buf.WriteString(es[i].Error())
+	}
+	return buf.String()
+}
+
+func (w lvlSplitWriter) Close() (err error) {
+	var errors werrors
+	if err := writer.Close(w.dw); err != nil {
+		errors = append(errors, err)
+	}
+	for _, lw := range w.lws {
+		if err := writer.Close(lw); err != nil {
+			errors = append(errors, err)
+		}
+	}
+
+	if len(errors) == 0 {
+		return nil
+	}
+	return errors
 }
