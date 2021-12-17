@@ -21,7 +21,6 @@ import (
 )
 
 var (
-	bMsgFmt   = "msg: %s"
 	bMessage  = "message"
 	bCtxKey   = "key"
 	bCtxValue = "value"

@@ -124,7 +124,7 @@ func (l Logger) WithContexts(kvs ...interface{}) Logger {
 
 // ResetContexts clears the old key-value contexts and resets it to kvs.
 func (l *Logger) ResetContexts(kvs ...interface{}) {
-	l.ctx, l.ctxs = l.ctx[:0], l.ctxs[:0]
+	l.ctx, l.ctxs = nil, nil
 	l.appendContexts(kvs...)
 }
 
