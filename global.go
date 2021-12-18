@@ -56,9 +56,6 @@ func WithContexts(kvs ...interface{}) Logger {
 	return DefaultLogger.WithContexts(kvs...)
 }
 
-// ResetContexts is equal to DefaultLogger.ResetContexts(kvs...).
-func ResetContexts(kvs ...interface{}) { DefaultLogger.ResetContexts(kvs...) }
-
 // Level is equal to DefaultLogger.Level(level, depth).
 func Level(level, depth int) *Emitter { return DefaultLogger.Level(level, depth+1) }
 
