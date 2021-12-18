@@ -12,16 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build go1.16
-// +build go1.16
-
 package writer
 
 import (
-	"io/fs"
 	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -57,13 +51,7 @@ func TestSizedRotatingFile(t *testing.T) {
 		}
 	}
 
-	filepath.Walk(".", func(path string, info fs.FileInfo, err error) error {
-		if name := info.Name(); strings.HasPrefix(name, filename) {
-			logfiles[name] = info.Size()
-		}
-		return nil
-	})
-
+	logfiles = listdir(".", filename)
 	if len(logfiles) != 4 {
 		t.Errorf("expect %d log files, but got %d", 4, len(logfiles))
 	} else {

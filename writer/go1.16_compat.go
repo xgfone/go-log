@@ -17,9 +17,26 @@
 
 package writer
 
+import (
+	"os"
+	"path/filepath"
+	"strings"
+)
+
 func init() { Discard = discard{} }
 
 type discard struct{}
 
 func (discard) Write(p []byte) (int, error)       { return len(p), nil }
 func (discard) WriteString(s string) (int, error) { return len(s), nil }
+
+func listdir(dir, prefix string) (files map[string]int64) {
+	files = make(map[string]int64)
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if name := info.Name(); strings.HasPrefix(name, prefix) {
+			files[name] = info.Size()
+		}
+		return nil
+	})
+	return
+}

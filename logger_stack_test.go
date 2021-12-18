@@ -17,14 +17,14 @@ package log
 import (
 	"bytes"
 	"errors"
-	"log"
 	"strings"
 	"testing"
 )
 
 func TestLoggerStack(t *testing.T) {
 	buf := bytes.NewBufferString("")
-	logger := New("test").WithWriter(buf).
+	logger := New("test").
+		WithWriter(buf).
 		WithEncoder(newTestEncoder()).
 		WithHooks(Caller("caller"))
 
@@ -32,7 +32,7 @@ func TestLoggerStack(t *testing.T) {
 	logger.Level(LvlInfo, 0).Printf("msg2")
 	logger.Level(LvlInfo, 0).Kv("k1", "v1").Print("msg3")
 	logger.Level(LvlInfo, 0).Kvs("k2", "v2").Printf("msg4")
-	logger.WithLevel(LvlInfo).StdLog("").Printf("msg5")
+	logger.WithLevel(LvlInfo).Write([]byte("msg5"))
 
 	const prefix = `{"lvl":"info","logger":"test","caller":"logger_stack_test.go:`
 	expects := []string{
@@ -55,42 +55,13 @@ func TestGlobalStack(t *testing.T) {
 	Level(LvlInfo, 0).Print("msg2")
 	IfErr(errors.New("error"), "msg3")
 	Ef(errors.New("error"), "msg4")
-	StdLog("").Printf("msg5")
 
 	expects := []string{
 		`{"lvl":"info","caller":"logger_stack_test.go:54:TestGlobalStack","msg":"msg1"}`,
 		`{"lvl":"info","caller":"logger_stack_test.go:55:TestGlobalStack","msg":"msg2"}`,
 		`{"lvl":"error","caller":"logger_stack_test.go:56:TestGlobalStack","err":"error","msg":"msg3"}`,
 		`{"lvl":"error","caller":"logger_stack_test.go:57:TestGlobalStack","err":"error","msg":"msg4"}`,
-		`{"lvl":"debug","caller":"logger_stack_test.go:58:TestGlobalStack","msg":"msg5"}`,
 		``,
 	}
 	testStrings(t, "global_stack", expects, strings.Split(buf.String(), "\n"))
-}
-
-func TestStdLog(t *testing.T) {
-	buf := bytes.NewBuffer(nil)
-	logger := New("").WithWriter(buf).
-		WithEncoder(newTestEncoder()).
-		WithHooks(Caller("caller"))
-
-	stdlog1 := logger.StdLog("")
-	stdlog1.Print("msg1")
-	stdlog1.Println("msg2")
-
-	stdlog2 := logger.StdLog("stdlog: ")
-	stdlog2.Print("msg3")
-
-	log.SetFlags(0)
-	log.SetOutput(logger.WithDepth(2))
-	log.Printf("msg4")
-
-	expects := []string{
-		`{"lvl":"debug","caller":"logger_stack_test.go:78:TestStdLog","msg":"msg1"}`,
-		`{"lvl":"debug","caller":"logger_stack_test.go:79:TestStdLog","msg":"msg2"}`,
-		`{"lvl":"debug","caller":"logger_stack_test.go:82:TestStdLog","msg":"stdlog: msg3"}`,
-		`{"lvl":"debug","caller":"logger_stack_test.go:86:TestStdLog","msg":"msg4"}`,
-		``,
-	}
-	testStrings(t, "stdlog", expects, strings.Split(buf.String(), "\n"))
 }

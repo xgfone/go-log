@@ -12,27 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build go1.16
-// +build go1.16
+//go:build !go1.12
+// +build !go1.12
 
-package writer
+package log
 
-import (
-	"io"
-	"io/fs"
-	"path/filepath"
-	"strings"
-)
-
-func init() { Discard = io.Discard }
-
-func listdir(dir, prefix string) (files map[string]int64) {
-	files = make(map[string]int64)
-	filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
-		if name := info.Name(); strings.HasPrefix(name, prefix) {
-			files[name] = info.Size()
-		}
-		return nil
-	})
-	return
-}
+func init() { stdlogDepth = 3 }

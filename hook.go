@@ -52,7 +52,8 @@ var CallerFormatFunc = func(file, name string, line int) string {
 	return fmt.Sprintf("%s:%d:%s", filepath.Base(file), line, name)
 }
 
-// Caller returns a callback function that returns the caller "file:line".
+// Caller returns a callback function that returns the caller
+// like "File:Line:FunctionName".
 func Caller(key string) Hook {
 	return HookFunc(func(e *Emitter, name string, level, depth int) {
 		if pc, file, line, ok := runtime.Caller(depth + 1); ok {

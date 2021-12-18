@@ -12,27 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build go1.16
-// +build go1.16
+package log
 
-package writer
+import "log"
 
-import (
-	"io"
-	"io/fs"
-	"path/filepath"
-	"strings"
-)
+var stdlogDepth = 2
 
-func init() { Discard = io.Discard }
+// StdLog is equal to DefaultLogger.StdLog(prefix).
+func StdLog(prefix string) *log.Logger {
+	return log.New(DefaultLogger.WithDepth(stdlogDepth), prefix, 0)
+}
 
-func listdir(dir, prefix string) (files map[string]int64) {
-	files = make(map[string]int64)
-	filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
-		if name := info.Name(); strings.HasPrefix(name, prefix) {
-			files[name] = info.Size()
-		}
-		return nil
-	})
-	return
+// StdLog returns a new log.Logger based on the current logger engine.
+func (l Logger) StdLog(prefix string) *log.Logger {
+	return log.New(l.WithDepth(stdlogDepth), prefix, 0)
 }

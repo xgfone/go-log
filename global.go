@@ -14,18 +14,10 @@
 
 package log
 
-import (
-	"io"
-	"log"
-)
+import "io"
 
 // DefaultLogger is the default global logger.
 var DefaultLogger = New("").WithHooks(Caller("caller"))
-
-// StdLog is equal to DefaultLogger.StdLog(prefix).
-func StdLog(prefix string) *log.Logger {
-	return log.New(DefaultLogger.WithDepth(2), prefix, 0)
-}
 
 // SetWriter is eqaul to DefaultLogger.SetWriter(w).
 func SetWriter(w io.Writer) { DefaultLogger.SetWriter(w) }

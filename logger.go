@@ -15,7 +15,6 @@
 package log
 
 import (
-	"log"
 	"os"
 	"strings"
 
@@ -148,9 +147,4 @@ func (l Logger) Write(p []byte) (n int, err error) {
 	}
 	l.getEmitter(l.level, 1).Printf(string(p))
 	return
-}
-
-// StdLog returns a new log.Logger based on the current logger engine.
-func (l Logger) StdLog(prefix string) *log.Logger {
-	return log.New(l.WithDepth(2), prefix, 0)
 }
