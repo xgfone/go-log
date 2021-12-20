@@ -12,22 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package log
+package sampler
 
-import "os"
+import (
+	"os"
+
+	"github.com/xgfone/go-log"
+	"github.com/xgfone/go-log/encoder"
+)
 
 func ExampleSimpleSampler() {
-	// For example test
-	GlobalDisableSampling(false)
-	encoder := newTestEncoder()
+	enc := encoder.NewJSONEncoder(log.FormatLevel)
+	enc.TimeKey = "" // Disable the time for the test example
 
-	sampler := NewSimpleSampler(LvlInfo)
-	sampler.ResetNamedLevels(map[string]int{"root": LvlError})
-	sampler.AddNamedLevel("root.child1.*", LvlWarn)
+	sampler := NewSimpleSampler(log.LvlInfo)
+	sampler.ResetNamedLevels(map[string]int{"root": log.LvlError})
+	sampler.AddNamedLevel("root.child1.*", log.LvlWarn)
 
-	logger := New("root").WithSampler(sampler)
+	logger := log.New("root").WithSampler(sampler)
 	logger.SetWriter(os.Stdout)
-	logger.SetEncoder(encoder)
+	logger.SetEncoder(enc)
 
 	logger.Debug().Print("msg11")
 	logger.Info().Print("msg12")
@@ -53,37 +57,4 @@ func ExampleSimpleSampler() {
 	// {"lvl":"error","logger":"root.child1","msg":"msg24"}
 	// {"lvl":"warn","logger":"root.child1.child2","msg":"msg33"}
 	// {"lvl":"error","logger":"root.child1.child2","msg":"msg34"}
-}
-
-func ExampleSwitchSampler() {
-	// For example test
-	GlobalDisableSampling(false)
-	encoder := newTestEncoder()
-
-	sampler1 := NewSimpleSampler(LvlInfo)
-	sampler1.ResetNamedLevels(map[string]int{"root": LvlWarn})
-
-	switchSampler := NewSwitchSampler(sampler1)
-	logger := New("root").WithSampler(switchSampler)
-	logger.SetWriter(os.Stdout)
-	logger.SetEncoder(encoder)
-
-	logger.Debug().Print("msg1")
-	logger.Info().Print("msg2")
-	logger.Warn().Print("msg3")
-	logger.Error().Print("msg4")
-
-	sampler2 := NewSimpleSampler(LvlInfo)
-	sampler2.ResetNamedLevels(map[string]int{"root": LvlError})
-	switchSampler.Set(sampler2)
-
-	logger.Debug().Print("msg5")
-	logger.Info().Print("msg6")
-	logger.Warn().Print("msg7")
-	logger.Error().Print("msg8")
-
-	// Output:
-	// {"lvl":"warn","logger":"root","msg":"msg3"}
-	// {"lvl":"error","logger":"root","msg":"msg4"}
-	// {"lvl":"error","logger":"root","msg":"msg8"}
 }
