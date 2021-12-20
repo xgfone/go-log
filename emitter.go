@@ -31,7 +31,7 @@ var emitterPool = sync.Pool{New: func() interface{} {
 // Emitter is used to emit the log message.
 type Emitter struct {
 	writer  LevelWriter
-	encoder Encoder
+	encoder encoderProxy
 	buffer  []byte
 	level   int
 }

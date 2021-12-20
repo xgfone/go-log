@@ -20,12 +20,15 @@ import (
 	"testing"
 
 	"github.com/xgfone/go-log"
+	"github.com/xgfone/go-log/encoder"
 )
 
 func TestGlobal(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	log.DefaultLogger.SetWriter(buf)
-	log.DefaultLogger.Output.GetEncoder().(*log.JSONEncoder).TimeKey = ""
+	enc := encoder.NewJSONEncoder(log.FormatLevel)
+	enc.TimeKey = ""
+	log.DefaultLogger.Output.SetEncoder(enc)
 
 	Tracef("msg%d", 1)
 	Debugf("msg%d", 2)
@@ -35,11 +38,11 @@ func TestGlobal(t *testing.T) {
 	Alertf("msg%d", 6)
 
 	expects := []string{
-		`{"lvl":"debug","caller":"global_test.go:31:TestGlobal","msg":"msg2"}`,
-		`{"lvl":"info","caller":"global_test.go:32:TestGlobal","msg":"msg3"}`,
-		`{"lvl":"warn","caller":"global_test.go:33:TestGlobal","msg":"msg4"}`,
-		`{"lvl":"error","caller":"global_test.go:34:TestGlobal","msg":"msg5"}`,
-		`{"lvl":"alert","caller":"global_test.go:35:TestGlobal","msg":"msg6"}`,
+		`{"lvl":"debug","caller":"global_test.go:34:TestGlobal","msg":"msg2"}`,
+		`{"lvl":"info","caller":"global_test.go:35:TestGlobal","msg":"msg3"}`,
+		`{"lvl":"warn","caller":"global_test.go:36:TestGlobal","msg":"msg4"}`,
+		`{"lvl":"error","caller":"global_test.go:37:TestGlobal","msg":"msg5"}`,
+		`{"lvl":"alert","caller":"global_test.go:38:TestGlobal","msg":"msg6"}`,
 		``,
 	}
 	lines := strings.Split(buf.String(), "\n")

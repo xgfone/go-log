@@ -19,12 +19,13 @@ import (
 	"os"
 	"path/filepath"
 
+	jencoder "github.com/xgfone/go-log/encoder"
 	"github.com/xgfone/go-log/writer"
 )
 
 // Output is used to handle the log output.
 type Output struct {
-	encoder Encoder
+	encoder encoderProxy
 	writer  LevelWriter
 }
 
@@ -36,34 +37,57 @@ func NewOutput(writer io.Writer, encoder Encoder) *Output {
 		panic("writer is nil")
 	}
 	if encoder == nil {
-		encoder = NewJSONEncoder()
+		encoder = jencoder.NewJSONEncoder(FormatLevel)
 	}
-	return &Output{encoder: encoder, writer: ToLevelWriter(writer)}
+	return &Output{encoder: newEncoder(encoder), writer: ToLevelWriter(writer)}
+}
+
+func (o *Output) clone() *Output {
+	return &Output{encoder: o.encoder, writer: o.writer}
 }
 
 // GetWriter returns the log writer.
-func (o *Output) GetWriter() io.Writer { return o.writer }
-
-// SetWriter resets the log writer to w.
-func (o *Output) SetWriter(w io.Writer) { o.writer = ToLevelWriter(w) }
+func (o *Output) GetWriter() io.Writer {
+	return o.writer
+}
 
 // GetEncoder returns the log encoder.
-func (o *Output) GetEncoder() Encoder { return o.encoder }
+func (o *Output) GetEncoder() Encoder {
+	return o.encoder.Encoder
+}
+
+// SetWriter resets the log writer to w.
+func (o *Output) SetWriter(w io.Writer) {
+	if w == nil {
+		panic("Output: the log writer is nil")
+	}
+	o.writer = ToLevelWriter(w)
+}
 
 // SetEncoder resets the log encoder to enc.
-func (o *Output) SetEncoder(enc Encoder) { o.encoder = enc }
+func (o *Output) SetEncoder(enc Encoder) {
+	if enc == nil {
+		panic("Output: the log encoder is nil")
+	}
+	o.encoder = newEncoder(enc)
+}
+
+// WithEncoder returns a new logger with the new output created the new encoder
+// and the original writer, which will also re-encode all the key-value contexts.
+func (l Logger) WithEncoder(encoder Encoder) Logger {
+	l.Output = l.Output.clone()
+	l.Output.SetEncoder(encoder)
+
+	ctxs := l.ctxs
+	l.ctx, l.ctxs = nil, nil
+	return l.WithContexts(ctxs...)
+}
 
 // WithWriter returns a new logger with the writer.
 func (l Logger) WithWriter(writer io.Writer) Logger {
 	l = l.Clone()
-	l.Output = NewOutput(writer, l.Output.encoder)
-	return l
-}
-
-// WithEncoder returns a new logger with the encoder.
-func (l Logger) WithEncoder(encoder Encoder) Logger {
-	l = l.Clone()
-	l.Output = NewOutput(l.Output.writer, encoder)
+	l.Output = l.Output.clone()
+	l.Output.SetWriter(writer)
 	return l
 }
 

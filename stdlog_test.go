@@ -24,7 +24,7 @@ import (
 func TestStdLog(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	DefaultLogger.SetWriter(buf)
-	DefaultLogger.Output.encoder.(*JSONEncoder).TimeKey = ""
+	DefaultLogger.Output.SetEncoder(newTestEncoder())
 	logger := New("").WithWriter(buf).WithEncoder(newTestEncoder()).
 		WithHooks(Caller("caller"))
 

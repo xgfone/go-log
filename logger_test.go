@@ -25,10 +25,11 @@ import (
 	"time"
 
 	"github.com/xgfone/go-atexit"
+	jencoder "github.com/xgfone/go-log/encoder"
 )
 
 func newTestEncoder() Encoder {
-	enc := NewJSONEncoder()
+	enc := jencoder.NewJSONEncoder(FormatLevel)
 	enc.TimeKey = ""
 	return enc
 }

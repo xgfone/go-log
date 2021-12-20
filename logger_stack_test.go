@@ -49,7 +49,7 @@ func TestLoggerStack(t *testing.T) {
 func TestGlobalStack(t *testing.T) {
 	buf := bytes.NewBufferString("")
 	DefaultLogger.SetWriter(buf)
-	DefaultLogger.Output.encoder.(*JSONEncoder).TimeKey = ""
+	DefaultLogger.Output.SetEncoder(newTestEncoder())
 
 	Info().Printf("msg1")
 	Level(LvlInfo, 0).Print("msg2")

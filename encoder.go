@@ -25,3 +25,12 @@ type Encoder interface {
 	// End ends to encode the log record with the message into the buffer dst.
 	End(dst []byte, msg string) []byte
 }
+
+type encoderProxy struct {
+	Encoder
+}
+
+func newEncoder(encoder Encoder) (enc encoderProxy) {
+	enc.Encoder = encoder
+	return
+}

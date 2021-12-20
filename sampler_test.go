@@ -19,8 +19,7 @@ import "os"
 func ExampleSimpleSampler() {
 	// For example test
 	GlobalDisableSampling(false)
-	encoder := NewJSONEncoder()
-	encoder.TimeKey = ""
+	encoder := newTestEncoder()
 
 	sampler := NewSimpleSampler(LvlInfo)
 	sampler.ResetNamedLevels(map[string]int{"root": LvlError})
@@ -59,8 +58,7 @@ func ExampleSimpleSampler() {
 func ExampleSwitchSampler() {
 	// For example test
 	GlobalDisableSampling(false)
-	encoder := NewJSONEncoder()
-	encoder.TimeKey = ""
+	encoder := newTestEncoder()
 
 	sampler1 := NewSimpleSampler(LvlInfo)
 	sampler1.ResetNamedLevels(map[string]int{"root": LvlWarn})
