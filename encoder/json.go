@@ -443,3 +443,104 @@ func appendStringComplex(dst []byte, s string, i int) []byte {
 	}
 	return dst
 }
+
+/// ----------------------------------------------------------------------- ///
+
+var (
+	_ IntEncoder      = &JSONEncoder{}
+	_ Int64Encoder    = &JSONEncoder{}
+	_ UintEncoder     = &JSONEncoder{}
+	_ Uint64Encoder   = &JSONEncoder{}
+	_ Float64Encoder  = &JSONEncoder{}
+	_ BoolEncoder     = &JSONEncoder{}
+	_ StringEncoder   = &JSONEncoder{}
+	_ TimeEncoder     = &JSONEncoder{}
+	_ DurationEncoder = &JSONEncoder{}
+)
+
+// EncodeInt implements the interface IntEncoder.
+func (enc *JSONEncoder) EncodeInt(dst []byte, key string, value int) []byte {
+	dst = AppendJSONString(dst, key)
+	dst = append(dst, ':')
+	dst = strconv.AppendInt(dst, int64(value), 10)
+	dst = append(dst, ',')
+	return dst
+}
+
+// EncodeInt64 implements the interface Int64Encoder.
+func (enc *JSONEncoder) EncodeInt64(dst []byte, key string, value int64) []byte {
+	dst = AppendJSONString(dst, key)
+	dst = append(dst, ':')
+	dst = strconv.AppendInt(dst, value, 10)
+	dst = append(dst, ',')
+	return dst
+}
+
+// EncodeUint implements the interface UintEncoder.
+func (enc *JSONEncoder) EncodeUint(dst []byte, key string, value uint) []byte {
+	dst = AppendJSONString(dst, key)
+	dst = append(dst, ':')
+	dst = strconv.AppendUint(dst, uint64(value), 10)
+	dst = append(dst, ',')
+	return dst
+}
+
+// EncodeUint64 implements the interface Uint64Encoder.
+func (enc *JSONEncoder) EncodeUint64(dst []byte, key string, value uint64) []byte {
+	dst = AppendJSONString(dst, key)
+	dst = append(dst, ':')
+	dst = strconv.AppendUint(dst, value, 10)
+	dst = append(dst, ',')
+	return dst
+}
+
+// EncodeFloat64 implements the interface Float64Encoder.
+func (enc *JSONEncoder) EncodeFloat64(dst []byte, key string, value float64) []byte {
+	dst = AppendJSONString(dst, key)
+	dst = append(dst, ':')
+	dst = strconv.AppendFloat(dst, value, 'f', -1, 64)
+	dst = append(dst, ',')
+	return dst
+}
+
+// EncodeBool implements the interface BoolEncoder.
+func (enc *JSONEncoder) EncodeBool(dst []byte, key string, value bool) []byte {
+	dst = AppendJSONString(dst, key)
+	dst = append(dst, ':')
+	if value {
+		dst = append(dst, `true`...)
+	} else {
+		dst = append(dst, `false`...)
+	}
+	dst = append(dst, ',')
+	return dst
+}
+
+// EncodeString implements the interface StringEncoder.
+func (enc *JSONEncoder) EncodeString(dst []byte, key string, value string) []byte {
+	dst = AppendJSONString(dst, key)
+	dst = append(dst, ':')
+	dst = AppendJSONString(dst, value)
+	dst = append(dst, ',')
+	return dst
+}
+
+// EncodeTime implements the interface TimeEncoder.
+func (enc *JSONEncoder) EncodeTime(dst []byte, key string, value time.Time) []byte {
+	dst = AppendJSONString(dst, key)
+	dst = append(dst, ':')
+	dst = enc.appendTime(dst, value)
+	dst = append(dst, ',')
+	return dst
+}
+
+// EncodeDuration implements the interface DurationEncoder.
+func (enc *JSONEncoder) EncodeDuration(dst []byte, key string, value time.Duration) []byte {
+	dst = AppendJSONString(dst, key)
+	dst = append(dst, ':')
+	dst = append(dst, '"')
+	dst = append(dst, value.String()...)
+	dst = append(dst, '"')
+	dst = append(dst, ',')
+	return dst
+}

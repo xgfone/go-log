@@ -16,6 +16,7 @@ package log
 
 import (
 	"testing"
+	"time"
 
 	"github.com/xgfone/go-log/writer"
 )
@@ -92,6 +93,26 @@ func BenchmarkJSONEncoderWith8KeyValues(b *testing.B) {
 				Kv(bCtxKey, bCtxValue).
 				Kv(bCtxKey, bCtxValue).
 				Kv(bCtxKey, bCtxValue).
+				Printf(bMessage)
+		}
+	})
+}
+
+func BenchmarkJSONEncoderWithOptimized8KVs(b *testing.B) {
+	logger := newBenchLogger()
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Info().
+				Int(bCtxKey, 111).
+				Int64(bCtxKey, 222).
+				Uint(bCtxKey, 333).
+				Uint64(bCtxKey, 444).
+				Float64(bCtxKey, 555).
+				Bool(bCtxKey, true).
+				Str(bCtxKey, bCtxValue).
+				Duration(bCtxKey, time.Second).
 				Printf(bMessage)
 		}
 	})

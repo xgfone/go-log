@@ -16,13 +16,9 @@ package log
 
 import (
 	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/xgfone/go-atexit"
 	jencoder "github.com/xgfone/go-log/encoder"
@@ -175,115 +171,4 @@ func TestSampler(t *testing.T) {
 		``,
 	}
 	testStrings(t, "sampler", expects, strings.Split(buf.String(), "\n"))
-}
-
-func TestJSONEncoder(t *testing.T) {
-	buf := bytes.NewBuffer(nil)
-	logger := New("test").WithWriter(buf).
-		WithEncoder(newTestEncoder()).
-		WithContext("ctxkey", "ctxvalue")
-
-	logger.Info().Kvs("nil", nil, "bool", true).
-		Kv("int", 10).
-		Kv("int8", 11).
-		Kv("int16", 12).
-		Kv("int32", 13).
-		Kv("int64", 14).
-		Kv("uint", 15).
-		Kv("uint8", 16).
-		Kv("uint16", 17).
-		Kv("uint32", 18).
-		Kv("uint64", 19).
-		Kv("float32", 20).
-		Kv("float64", 21).
-		Kv("string", "22").
-		Kv("error", errors.New("23")).
-		Kv("duration", time.Duration(24)*time.Second).
-		Kv("time", time.Date(2021, time.May, 25, 22, 52, 26, 0, time.UTC)).
-		Kv("[]interface{}", []interface{}{"26", "27"}).
-		Kv("[]string", []string{"28", "29"}).
-		Kv("[]uint", []uint{30, 31}).
-		Kv("[]uint64", []uint64{32, 33}).
-		Kv("[]int", []int{34, 35}).
-		Kv("[]int64", []int64{36, 37}).
-		Kv("map[string]interface{}", map[string]interface{}{"a": "38", "b": "39"}).
-		Kv("map[string]string", map[string]string{"c": "40", "d": "41"}).
-		Print(`"test json encoder"`)
-
-	type encoderT struct {
-		Msg      string      `json:"msg"`
-		Lvl      string      `json:"lvl"`
-		Logger   string      `json:"logger"`
-		Ctx      string      `json:"ctxkey"`
-		Nil      interface{} `json:"nil"`
-		Bool     bool        `json:"bool"`
-		Int      int         `json:"int"`
-		Int8     int8        `json:"int8"`
-		Int16    int16       `json:"int16"`
-		Int32    int32       `json:"int32"`
-		Int64    int64       `json:"int64"`
-		Uint     uint        `json:"uint"`
-		Uint8    uint8       `json:"uint8"`
-		Uint16   uint16      `json:"uint16"`
-		Uint32   uint32      `json:"uint32"`
-		Uint64   uint64      `json:"uint64"`
-		Float32  float32     `json:"float32"`
-		Float64  float64     `json:"float64"`
-		String   string      `json:"string"`
-		Error    string      `json:"error"`
-		Duration string      `json:"duration"`
-		Time     string      `json:"time"`
-
-		Interfaces []interface{} `json:"[]interface{}"`
-		Strings    []string      `json:"[]string"`
-		Uints      []uint        `json:"[]uint"`
-		Uint64s    []uint64      `json:"[]uint64"`
-		Ints       []int         `json:"[]int"`
-		Int64s     []int64       `json:"[]int64"`
-
-		MapString    map[string]string      `json:"map[string]string"`
-		MapInterface map[string]interface{} `json:"map[string]interface{}"`
-	}
-
-	expect := encoderT{
-		Msg:      `"test json encoder"`,
-		Lvl:      "info",
-		Logger:   "test",
-		Ctx:      "ctxvalue",
-		Nil:      nil,
-		Bool:     true,
-		Int:      10,
-		Int8:     11,
-		Int16:    12,
-		Int32:    13,
-		Int64:    14,
-		Uint:     15,
-		Uint8:    16,
-		Uint16:   17,
-		Uint32:   18,
-		Uint64:   19,
-		Float32:  20,
-		Float64:  21,
-		String:   "22",
-		Error:    "23",
-		Duration: "24s",
-		Time:     "2021-05-25T22:52:26Z",
-
-		Interfaces: []interface{}{"26", "27"},
-		Strings:    []string{"28", "29"},
-		Uints:      []uint{30, 31},
-		Uint64s:    []uint64{32, 33},
-		Ints:       []int{34, 35},
-		Int64s:     []int64{36, 37},
-
-		MapInterface: map[string]interface{}{"a": "38", "b": "39"},
-		MapString:    map[string]string{"c": "40", "d": "41"},
-	}
-
-	var result encoderT
-	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
-		t.Error(err)
-	} else if !reflect.DeepEqual(result, expect) {
-		t.Errorf("expect '%+v', but got '%+v'", expect, result)
-	}
 }
