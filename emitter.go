@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/xgfone/go-atexit"
+	"github.com/xgfone/go-log/writer"
 )
 
 // DefaultBufferCap is the default capacity of the buffer to encode the log.
@@ -30,7 +31,7 @@ var emitterPool = sync.Pool{New: func() interface{} {
 
 // Emitter is used to emit the log message.
 type Emitter struct {
-	writer  LevelWriter
+	writer  writer.LevelWriter
 	encoder encoderProxy
 	buffer  []byte
 	level   int

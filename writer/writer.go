@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package writer provides some io writers.
+// Package writer provides some log writers.
 package writer
 
 import (

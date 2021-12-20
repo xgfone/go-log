@@ -26,20 +26,23 @@ import (
 // Output is used to handle the log output.
 type Output struct {
 	encoder encoderProxy
-	writer  LevelWriter
+	writer  writer.LevelWriter
 }
 
 // NewOutput returns a new log output.
 //
-// If the encoder is nil, use NewJSONEncoder() by default.
-func NewOutput(writer io.Writer, encoder Encoder) *Output {
-	if writer == nil {
+// If the encoder is nil, use JSONEncoder in the sub-package encoder by default.
+func NewOutput(w io.Writer, encoder Encoder) *Output {
+	if w == nil {
 		panic("writer is nil")
 	}
 	if encoder == nil {
 		encoder = jencoder.NewJSONEncoder(FormatLevel)
 	}
-	return &Output{encoder: newEncoder(encoder), writer: ToLevelWriter(writer)}
+	return &Output{
+		encoder: newEncoder(encoder),
+		writer:  writer.ToLevelWriter(w),
+	}
 }
 
 func (o *Output) clone() *Output {
@@ -61,7 +64,7 @@ func (o *Output) SetWriter(w io.Writer) {
 	if w == nil {
 		panic("Output: the log writer is nil")
 	}
-	o.writer = ToLevelWriter(w)
+	o.writer = writer.ToLevelWriter(w)
 }
 
 // SetEncoder resets the log encoder to enc.
@@ -90,28 +93,6 @@ func (l Logger) WithWriter(writer io.Writer) Logger {
 	l.Output.SetWriter(writer)
 	return l
 }
-
-/// ----------------------------------------------------------------------- ///
-
-// LevelWriter is a writer with the level.
-type LevelWriter interface {
-	WriteLevel(level int, data []byte) (n int, err error)
-	io.Writer
-}
-
-// ToLevelWriter converts the io.Writer to LevelWriter.
-func ToLevelWriter(writer io.Writer) LevelWriter {
-	if lw, ok := writer.(LevelWriter); ok {
-		return lw
-	}
-	return lvlWriter{Writer: writer}
-}
-
-type lvlWriter struct{ io.Writer }
-
-func (lw lvlWriter) UnwrapWriter() io.Writer                 { return lw.Writer }
-func (lw lvlWriter) WriteLevel(l int, p []byte) (int, error) { return lw.Write(p) }
-func (lw lvlWriter) Close() (err error)                      { return writer.Close(lw.Writer) }
 
 /// ----------------------------------------------------------------------- ///
 
@@ -148,58 +129,4 @@ func FileWriter(filename, filesize string, filenum int) io.WriteCloser {
 	}
 
 	return writer.NewSizedRotatingFile(filename, int(size), filenum)
-}
-
-/// ----------------------------------------------------------------------- ///
-
-// LevelSplitWriter returns a writer to write the log into the different writer
-// by the level.
-func LevelSplitWriter(defaultWriter io.Writer, levelWriters map[int]io.Writer) LevelWriter {
-	lws := make(map[int]LevelWriter, len(levelWriters))
-	for level, lw := range levelWriters {
-		lws[level] = ToLevelWriter(lw)
-	}
-	return lvlSplitWriter{dw: ToLevelWriter(defaultWriter), lws: lws}
-}
-
-type lvlSplitWriter struct {
-	lws map[int]LevelWriter
-	dw  LevelWriter
-}
-
-func (w lvlSplitWriter) Write(p []byte) (int, error) { return w.dw.Write(p) }
-
-func (w lvlSplitWriter) WriteLevel(level int, p []byte) (int, error) {
-	if lw, ok := w.lws[level]; ok {
-		return lw.WriteLevel(level, p)
-	}
-	return w.dw.WriteLevel(level, p)
-}
-
-type werrors []error
-
-func (es werrors) Errors() []error { return es }
-func (es werrors) Error() string {
-	buf := make([]byte, 0, 128)
-	for i, _len := 0, len(es); i < _len; i++ {
-		buf = append(buf, es[i].Error()...)
-	}
-	return string(buf)
-}
-
-func (w lvlSplitWriter) Close() (err error) {
-	var errors werrors
-	if err := writer.Close(w.dw); err != nil {
-		errors = append(errors, err)
-	}
-	for _, lw := range w.lws {
-		if err := writer.Close(lw); err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	if len(errors) == 0 {
-		return nil
-	}
-	return errors
 }

@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package log
+package writer
 
 import (
 	"io"
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/xgfone/go-log/writer"
 )
 
 func TestMultiLevelWriter(t *testing.T) {
@@ -35,15 +33,15 @@ func TestMultiLevelWriter(t *testing.T) {
 	defer os.Remove(errfilename)
 	defer os.Remove(logfilename)
 
-	defaultLogWriter := FileWriter(logfilename, logfilesize, logfilenum)
+	defaultLogWriter := NewSizedRotatingFile(logfilename, 1024*1024, logfilenum)
 	levelWriters := map[int]io.Writer{
-		LvlError: FileWriter(errfilename, logfilesize, logfilenum),
+		80: NewSizedRotatingFile(errfilename, 1024*1024, logfilenum),
 	}
 
 	mwriter := LevelSplitWriter(defaultLogWriter, levelWriters)
-	mwriter.WriteLevel(LvlInfo, []byte(infolog))
-	mwriter.WriteLevel(LvlError, []byte(errorlog))
-	writer.Close(mwriter)
+	mwriter.WriteLevel(40, []byte(infolog))
+	mwriter.WriteLevel(80, []byte(errorlog))
+	Close(mwriter)
 
 	if logdata, err := ioutil.ReadFile(logfilename); err != nil {
 		t.Error(err)
