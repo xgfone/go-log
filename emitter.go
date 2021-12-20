@@ -39,6 +39,16 @@ type Emitter struct {
 // Enabled reports whether the log emitter is enabled.
 func (e *Emitter) Enabled() bool { return e != nil }
 
+// Err is equal to e.Kv("err", err).
+func (e *Emitter) Err(err error) *Emitter {
+	if e == nil {
+		return nil
+	}
+
+	e.buffer = e.encoder.Encode(e.buffer, "err", err)
+	return e
+}
+
 // Kv appends a key-value context into the log message and returns the emitter itself.
 func (e *Emitter) Kv(key string, value interface{}) *Emitter {
 	if e == nil {
