@@ -43,6 +43,19 @@ var FormatTime = func(buf []byte, t time.Time) []byte {
 	return append(buf, '"')
 }
 
+var (
+	_ IntEncoder         = &JSONEncoder{}
+	_ Int64Encoder       = &JSONEncoder{}
+	_ UintEncoder        = &JSONEncoder{}
+	_ Uint64Encoder      = &JSONEncoder{}
+	_ Float64Encoder     = &JSONEncoder{}
+	_ BoolEncoder        = &JSONEncoder{}
+	_ StringEncoder      = &JSONEncoder{}
+	_ TimeEncoder        = &JSONEncoder{}
+	_ DurationEncoder    = &JSONEncoder{}
+	_ StringSliceEncoder = &JSONEncoder{}
+)
+
 // JSONEncoder is a log encoder to encode the log record as JSON.
 type JSONEncoder struct {
 	// If true, append a newline when emit the log record.
@@ -542,5 +555,18 @@ func (enc *JSONEncoder) EncodeDuration(dst []byte, key string, value time.Durati
 	dst = append(dst, value.String()...)
 	dst = append(dst, '"')
 	dst = append(dst, ',')
+	return dst
+}
+
+// EncodeStringSlice implements the interface StringSliceEncoder.
+func (enc *JSONEncoder) EncodeStringSlice(dst []byte, key string, value []string) []byte {
+	dst = append(dst, '[')
+	for i, v := range value {
+		if i > 0 {
+			dst = append(dst, ',')
+		}
+		dst = AppendJSONString(dst, v)
+	}
+	dst = append(dst, ']')
 	return dst
 }

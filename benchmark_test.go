@@ -16,7 +16,6 @@ package log
 
 import (
 	"testing"
-	"time"
 
 	"github.com/xgfone/go-log/writer"
 )
@@ -100,6 +99,7 @@ func BenchmarkJSONEncoderWith8KeyValues(b *testing.B) {
 
 func BenchmarkJSONEncoderWithOptimized8KVs(b *testing.B) {
 	logger := newBenchLogger()
+	strs := []string{"a", "b"}
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -112,7 +112,7 @@ func BenchmarkJSONEncoderWithOptimized8KVs(b *testing.B) {
 				Float64(bCtxKey, 555).
 				Bool(bCtxKey, true).
 				Str(bCtxKey, bCtxValue).
-				Duration(bCtxKey, time.Second).
+				StrSlice(bCtxKey, strs).
 				Printf(bMessage)
 		}
 	})

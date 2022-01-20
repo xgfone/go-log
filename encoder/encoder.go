@@ -61,3 +61,8 @@ type TimeEncoder interface {
 type DurationEncoder interface {
 	EncodeDuration(dst []byte, key string, value time.Duration) []byte
 }
+
+// StringSliceEncoder is used to encode the value typed []string.
+type StringSliceEncoder interface {
+	EncodeStringSlice(dst []byte, key string, value []string) []byte
+}

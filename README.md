@@ -281,4 +281,4 @@ cpu: 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
 |BenchmarkJSONEncoderInfo-8              |  64, 453, 407 | 17.84 |     0     |    0
 |BenchmarkJSONEncoderWith8Contexts-8     |  63, 589, 971 | 17.87 |     0     |    0
 |BenchmarkJSONEncoderWith8KeyValues-8    |   9, 351, 409 | 121.9 |    128    |    8
-|BenchmarkJSONEncoderWithOptimized8KVs-8 |  14, 620, 470 | 78.71 |     2     |    1
+|BenchmarkJSONEncoderWithOptimized8KVs-8 |  14, 620, 470 | 78.71 |     0     |    0

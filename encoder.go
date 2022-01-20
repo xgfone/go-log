@@ -42,6 +42,7 @@ type encoderProxy struct {
 	encoder.StringEncoder
 	encoder.TimeEncoder
 	encoder.DurationEncoder
+	encoder.StringSliceEncoder
 	Encoder
 }
 
@@ -75,6 +76,9 @@ func newEncoder(orig Encoder) (enc encoderProxy) {
 	}
 	if enc.DurationEncoder, ok = orig.(encoder.DurationEncoder); !ok {
 		enc.DurationEncoder = durationEncoder{orig}
+	}
+	if enc.StringSliceEncoder, ok = orig.(encoder.StringSliceEncoder); !ok {
+		enc.StringSliceEncoder = strsEncoder{orig}
 	}
 	return
 }
@@ -238,5 +242,23 @@ func (e *Emitter) Duration(key string, value time.Duration) *Emitter {
 	}
 
 	e.buffer = e.encoder.EncodeDuration(e.buffer, key, value)
+	return e
+}
+
+/// ----------------------------------------------------------------------- ///
+
+type strsEncoder struct{ Encoder }
+
+func (e strsEncoder) EncodeStringSlice(dst []byte, key string, value []string) []byte {
+	return e.Encode(dst, key, value)
+}
+
+// StrSlice is equal to e.Kv(key, value), but optimized for the value typed []string.
+func (e *Emitter) StrSlice(key string, value []string) *Emitter {
+	if e == nil {
+		return nil
+	}
+
+	e.buffer = e.encoder.EncodeStringSlice(e.buffer, key, value)
 	return e
 }
