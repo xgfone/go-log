@@ -31,7 +31,7 @@ func TestLoggerStack(t *testing.T) {
 	logger.Info().Print("msg1")
 	logger.Level(LvlInfo, 0).Printf("msg2")
 	logger.Level(LvlInfo, 0).Kv("k1", "v1").Print("msg3")
-	logger.Level(LvlInfo, 0).Kvs("k2", "v2").Printf("msg4")
+	logger.Log(LvlInfo, 0, "msg4", "k2", "v2")
 	logger.WithLevel(LvlInfo).Write([]byte("msg5"))
 
 	const prefix = `{"lvl":"info","logger":"test","caller":"logger_stack_test.go:`

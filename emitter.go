@@ -137,6 +137,12 @@ func (l Logger) getEmitter(level, depth int) *Emitter {
 	return newEmitter(l, level, l.depth+depth)
 }
 
+// Log is convenient function to emit a log, which is equal to
+// l.Level(level, 0).Kvs(keysAndValues...).Printf(msg).
+func (l Logger) Log(level, depth int, msg string, keysAndValues ...interface{}) {
+	l.Level(level, depth+1).Kvs(keysAndValues...).Printf(msg)
+}
+
 // Level returns an emitter with the level and the stack depth to emit the log.
 func (l Logger) Level(level, depth int) *Emitter {
 	checkLevel(level)
