@@ -21,14 +21,14 @@ import (
 	"testing"
 )
 
-func TestStdLog(t *testing.T) {
+func TestStdLogger(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	DefaultLogger.SetWriter(buf)
 	DefaultLogger.Output.SetEncoder(newTestEncoder())
 	logger := New("").WithWriter(buf).WithEncoder(newTestEncoder()).
 		WithHooks(Caller("caller"))
 
-	stdlog1 := logger.StdLog("")
+	stdlog1 := logger.StdLogger("", LvlDebug)
 	stdlog1.Print("msg1")
 	stdlog1.Println("msg2")
 
@@ -36,13 +36,13 @@ func TestStdLog(t *testing.T) {
 	log.SetOutput(logger.WithDepth(stdlogDepth))
 	log.Printf("msg3")
 
-	StdLog("").Printf("msg4")
+	StdLogger("", LvlDebug).Printf("msg4")
 
 	expects := []string{
-		`{"lvl":"debug","caller":"stdlog_test.go:32:TestStdLog","msg":"msg1"}`,
-		`{"lvl":"debug","caller":"stdlog_test.go:33:TestStdLog","msg":"msg2"}`,
-		`{"lvl":"debug","caller":"stdlog_test.go:37:TestStdLog","msg":"msg3"}`,
-		`{"lvl":"debug","caller":"stdlog_test.go:39:TestStdLog","msg":"msg4"}`,
+		`{"lvl":"debug","caller":"stdlog_test.go:32:TestStdLogger","msg":"msg1"}`,
+		`{"lvl":"debug","caller":"stdlog_test.go:33:TestStdLogger","msg":"msg2"}`,
+		`{"lvl":"debug","caller":"stdlog_test.go:37:TestStdLogger","msg":"msg3"}`,
+		`{"lvl":"debug","caller":"stdlog_test.go:39:TestStdLogger","msg":"msg4"}`,
 		``,
 	}
 	testStrings(t, "stdlog", expects, strings.Split(buf.String(), "\n"))

@@ -18,12 +18,13 @@ import "log"
 
 var stdlogDepth = 2
 
-// StdLog is equal to DefaultLogger.StdLog(prefix).
-func StdLog(prefix string) *log.Logger {
-	return log.New(DefaultLogger.WithDepth(stdlogDepth), prefix, 0)
+// StdLogger is equal to DefaultLogger.StdLogger(prefix, level).
+func StdLogger(prefix string, level int) *log.Logger {
+	return log.New(DefaultLogger.WithLevel(level).WithDepth(stdlogDepth), prefix, 0)
 }
 
-// StdLog returns a new log.Logger based on the current logger engine.
-func (l Logger) StdLog(prefix string) *log.Logger {
-	return log.New(l.WithDepth(stdlogDepth), prefix, 0)
+// StdLogger returns a new log.Logger based on the current logger engine
+// with the prefix and level.
+func (l Logger) StdLogger(prefix string, level int) *log.Logger {
+	return log.New(l.WithLevel(level).WithDepth(stdlogDepth), prefix, 0)
 }
