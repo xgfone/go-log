@@ -49,6 +49,11 @@ func (o *Output) clone() *Output {
 	return &Output{encoder: o.encoder, writer: o.writer}
 }
 
+// Writer is the alias of GetWriter.
+func (o *Output) Writer() io.Writer {
+	return o.writer
+}
+
 // GetWriter returns the log writer.
 func (o *Output) GetWriter() io.Writer {
 	return o.writer
