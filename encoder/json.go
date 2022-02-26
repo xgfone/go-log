@@ -560,6 +560,8 @@ func (enc *JSONEncoder) EncodeDuration(dst []byte, key string, value time.Durati
 
 // EncodeStringSlice implements the interface StringSliceEncoder.
 func (enc *JSONEncoder) EncodeStringSlice(dst []byte, key string, value []string) []byte {
+	dst = AppendJSONString(dst, key)
+	dst = append(dst, ':')
 	dst = append(dst, '[')
 	for i, v := range value {
 		if i > 0 {
@@ -568,5 +570,6 @@ func (enc *JSONEncoder) EncodeStringSlice(dst []byte, key string, value []string
 		dst = AppendJSONString(dst, v)
 	}
 	dst = append(dst, ']')
+	dst = append(dst, ',')
 	return dst
 }

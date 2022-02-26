@@ -57,7 +57,7 @@ func TestJSONEncoder(t *testing.T) {
 	buf = enc.Encode(buf, "duration", time.Duration(24)*time.Second)
 	buf = enc.Encode(buf, "time", time.Date(2021, time.May, 25, 22, 52, 26, 0, time.UTC))
 	buf = enc.Encode(buf, "[]interface{}", []interface{}{"26", "27"})
-	buf = enc.Encode(buf, "[]string", []string{"28", "29"})
+	buf = enc.EncodeStringSlice(buf, "[]string", []string{"28", "29"})
 	buf = enc.Encode(buf, "[]uint", []uint{30, 31})
 	buf = enc.Encode(buf, "[]uint64", []uint64{32, 33})
 	buf = enc.Encode(buf, "[]int", []int{34, 35})
@@ -154,7 +154,7 @@ func TestJSONEncoder(t *testing.T) {
 
 	var result encoderT
 	if err := json.Unmarshal(buf, &result); err != nil {
-		t.Error(err)
+		t.Error(err, string(buf))
 	} else if !reflect.DeepEqual(result, expect) {
 		t.Errorf("expect '%+v', but got '%+v'", expect, result)
 	}
