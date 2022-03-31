@@ -24,10 +24,10 @@ import (
 
 func TestJSONEncoder(t *testing.T) {
 	var buf []byte
-	enc := NewJSONEncoder(nil)
+	enc := NewJSONEncoder()
 	enc.TimeKey = ""
 
-	buf = enc.Start(buf, "", 0)
+	buf = enc.Start(buf, "", "")
 	buf = enc.EncodeInt(buf, "k1", 111)
 	buf = enc.EncodeInt64(buf, "k2", 222)
 	buf = enc.EncodeUint(buf, "k3", 333)

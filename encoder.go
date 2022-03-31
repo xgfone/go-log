@@ -23,7 +23,7 @@ import (
 // Encoder is used to encode the log record.
 type Encoder interface {
 	// Start starts to encode the log record into the buffer dst.
-	Start(dst []byte, loggerName string, level int) []byte
+	Start(dst []byte, loggerName, level string) []byte
 
 	// Encode encodes the key-value with the stack depth into the buffer dst.
 	Encode(dst []byte, key string, value interface{}) []byte

@@ -37,7 +37,7 @@ func NewOutput(w io.Writer, encoder Encoder) *Output {
 		panic("writer is nil")
 	}
 	if encoder == nil {
-		encoder = jencoder.NewJSONEncoder(FormatLevel)
+		encoder = jencoder.NewJSONEncoder()
 	}
 	return &Output{
 		encoder: newEncoder(encoder),

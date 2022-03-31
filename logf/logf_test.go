@@ -22,7 +22,7 @@ import (
 )
 
 func ExampleLogger() {
-	enc := encoder.NewJSONEncoder(log.FormatLevel)
+	enc := encoder.NewJSONEncoder()
 	enc.TimeKey = "" // For test, we disable the log time
 	_logger := log.New("").WithHooks(log.Caller("caller"))
 	_logger.SetWriter(os.Stdout)

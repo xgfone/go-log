@@ -124,7 +124,7 @@ func newEmitter(logger Logger, level int, depth int) *Emitter {
 	l.writer = logger.Output.writer
 	l.level = level
 
-	l.buffer = l.encoder.Start(l.buffer, logger.name, level)
+	l.buffer = l.encoder.Start(l.buffer, logger.name, logger.FormatLevel(level))
 	l.buffer = append(l.buffer, logger.ctx...)
 	for i, _len := 0, len(logger.hooks); i < _len; i++ {
 		logger.hooks[i].Run(l, logger.name, level, depth+2)

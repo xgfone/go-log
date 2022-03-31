@@ -78,9 +78,6 @@ type JSONEncoder struct {
 	// Default: "lvl"
 	LevelKey string
 
-	// LevelFormatFunc is used to format the level.
-	LevelFormatFunc func(level int) string
-
 	// LoggerKey is the key name of the logger name.
 	//
 	// Default: "logger"
@@ -95,20 +92,18 @@ type JSONEncoder struct {
 // NewJSONEncoder returns a new JSONEncoder.
 //
 // If formatLevel is nil, disable to format the level.
-func NewJSONEncoder(formatLevel func(level int) string) *JSONEncoder {
+func NewJSONEncoder() *JSONEncoder {
 	return &JSONEncoder{
 		Newline:   true,
 		TimeKey:   "t",
 		LevelKey:  "lvl",
 		LoggerKey: "logger",
 		MsgKey:    "msg",
-
-		LevelFormatFunc: formatLevel,
 	}
 }
 
 // Start implements the interface Encoder.
-func (enc *JSONEncoder) Start(buf []byte, name string, level int) []byte {
+func (enc *JSONEncoder) Start(buf []byte, name, level string) []byte {
 	// JSON Start
 	buf = append(buf, '{')
 
@@ -121,10 +116,10 @@ func (enc *JSONEncoder) Start(buf []byte, name string, level int) []byte {
 	}
 
 	// Level
-	if len(enc.LevelKey) > 0 && enc.LevelFormatFunc != nil {
+	if len(enc.LevelKey) > 0 {
 		buf = AppendJSONString(buf, enc.LevelKey)
 		buf = append(buf, ':')
-		buf = AppendJSONString(buf, enc.LevelFormatFunc(level))
+		buf = AppendJSONString(buf, level)
 		buf = append(buf, ',')
 	}
 
@@ -445,7 +440,7 @@ func appendStringComplex(dst []byte, s string, i int) []byte {
 		case '\t':
 			dst = append(dst, '\\', 't')
 		default:
-			dst = append(dst, '\\', 'u', '0', '0', hex[b>>4], hex[b&0xF])
+			dst = append(dst, '\\', 'u', '0', '0', hex[b>>byte(4)], hex[b&0xF])
 		}
 		i++
 		start = i

@@ -22,7 +22,7 @@ import (
 )
 
 func ExampleSimpleSampler() {
-	enc := encoder.NewJSONEncoder(log.FormatLevel)
+	enc := encoder.NewJSONEncoder()
 	enc.TimeKey = "" // Disable the time for the test example
 
 	sampler := NewSimpleSampler(log.LvlInfo)

@@ -26,7 +26,7 @@ import (
 func TestGlobal(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	log.DefaultLogger.SetWriter(buf)
-	enc := encoder.NewJSONEncoder(log.FormatLevel)
+	enc := encoder.NewJSONEncoder()
 	enc.TimeKey = ""
 	log.DefaultLogger.Output.SetEncoder(enc)
 

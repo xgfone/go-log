@@ -25,7 +25,7 @@ import (
 )
 
 func newTestEncoder() Encoder {
-	enc := jencoder.NewJSONEncoder(FormatLevel)
+	enc := jencoder.NewJSONEncoder()
 	enc.TimeKey = ""
 	return enc
 }

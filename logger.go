@@ -29,6 +29,7 @@ type Logger struct {
 	level   int
 	depth   int
 	sampler Sampler
+	fmtLvl  func(int) string
 
 	// Key-Value Context
 	hooks []Hook
@@ -70,6 +71,22 @@ func (l Logger) Depth() int { return l.depth }
 
 // GetLevel returns the level of the current logger.
 func (l Logger) GetLevel() int { return l.level }
+
+// FormatLevel formats the level to string.
+func (l Logger) FormatLevel(level int) string {
+	if l.fmtLvl != nil {
+		return l.fmtLvl(level)
+	}
+	return formatLevel(level)
+}
+
+// WithFormatLevel returns a new logger with the customized level formatter.
+//
+// If format is nil, use FormatLevel instead.
+func (l Logger) WithFormatLevel(format func(level int) string) Logger {
+	l.fmtLvl = format
+	return l
+}
 
 // WithName returns a new logger with the name.
 //
