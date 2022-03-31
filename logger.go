@@ -88,10 +88,10 @@ func (l *Logger) SetLevelFormat(format func(level int) string) {
 	l.fmtLvl = format
 }
 
-// WithFormatLevel returns a new logger with the customized level formatter.
+// WithLevelFormat returns a new logger with the customized level formatter.
 //
 // If format is nil, use FormatLevel instead.
-func (l Logger) WithFormatLevel(format func(level int) string) Logger {
+func (l Logger) WithLevelFormat(format func(level int) string) Logger {
 	l.fmtLvl = format
 	return l
 }

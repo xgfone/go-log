@@ -56,9 +56,9 @@ func WithContexts(kvs ...interface{}) Logger {
 	return DefaultLogger.WithContexts(kvs...)
 }
 
-// WithFormatLevel is equal to DefaultLogger.WithFormatLevel(format).
-func WithFormatLevel(format func(level int) string) Logger {
-	return DefaultLogger.WithFormatLevel(format)
+// WithLevelFormat is equal to DefaultLogger.WithLevelFormat(format).
+func WithLevelFormat(format func(level int) string) Logger {
+	return DefaultLogger.WithLevelFormat(format)
 }
 
 // SetLevelFormat is equal to DefaultLogger.SetLevelFormat(format).
