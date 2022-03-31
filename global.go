@@ -56,8 +56,8 @@ func WithContexts(kvs ...interface{}) Logger {
 	return DefaultLogger.WithContexts(kvs...)
 }
 
-// Level is equal to DefaultLogger.Level(level, depth).
-func Level(level, depth int) *Emitter { return DefaultLogger.Level(level, depth+1) }
+// LevelLog is equal to DefaultLogger.Level(level, depth).
+func LevelLog(level, depth int) *Emitter { return DefaultLogger.Level(level, depth+1) }
 
 // Trace is equal to DefaultLogger.Trace().
 func Trace() *Emitter { return DefaultLogger.getEmitter(LvlTrace, 1) }

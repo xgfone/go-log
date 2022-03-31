@@ -52,7 +52,7 @@ func TestGlobalStack(t *testing.T) {
 	DefaultLogger.Output.SetEncoder(newTestEncoder())
 
 	Info().Printf("msg1")
-	Level(LvlInfo, 0).Print("msg2")
+	LevelLog(LvlInfo, 0).Print("msg2")
 	IfErr(errors.New("error"), "msg3")
 	Ef(errors.New("error"), "msg4")
 
