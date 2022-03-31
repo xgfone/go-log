@@ -25,8 +25,8 @@ func SetWriter(w io.Writer) { DefaultLogger.SetWriter(w) }
 // SetEncoder is eqaul to DefaultLogger.SetEncoder(enc).
 func SetEncoder(enc Encoder) { DefaultLogger.SetEncoder(enc) }
 
-// SetLevel resets the level of the default logger.
-func SetLevel(level int) { checkLevel(level); DefaultLogger.level = level }
+// SetLevel is equal to DefaultLogger.SetLevel(level).
+func SetLevel(level int) { DefaultLogger.SetLevel(level) }
 
 // GetLevel is equal to DefaultLogger.GetLevel().
 func GetLevel() int { return DefaultLogger.GetLevel() }

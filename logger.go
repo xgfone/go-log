@@ -72,6 +72,9 @@ func (l Logger) Depth() int { return l.depth }
 // GetLevel returns the level of the current logger.
 func (l Logger) GetLevel() int { return l.level }
 
+// SetLevel resets the level, which is not thread-safe.
+func (l *Logger) SetLevel(level int) { checkLevel(level); l.level = level }
+
 // FormatLevel formats the level to string.
 func (l Logger) FormatLevel(level int) string {
 	if l.fmtLvl != nil {
