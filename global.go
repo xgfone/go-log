@@ -61,6 +61,11 @@ func WithFormatLevel(format func(level int) string) Logger {
 	return DefaultLogger.WithFormatLevel(format)
 }
 
+// SetLevelFormat is equal to DefaultLogger.SetLevelFormat(format).
+func SetLevelFormat(format func(level int) string) {
+	DefaultLogger.SetLevelFormat(format)
+}
+
 // LevelLog is equal to DefaultLogger.Level(level, depth).
 func LevelLog(level, depth int) *Emitter { return DefaultLogger.Level(level, depth+1) }
 
