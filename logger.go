@@ -80,10 +80,12 @@ func (l Logger) FormatLevel(level int) string {
 	if l.fmtLvl != nil {
 		return l.fmtLvl(level)
 	}
-	return formatLevel(level)
+	return FormatLevel(level)
 }
 
 // SetLevelFormat resets the level formatter, which is not thread-safe.
+//
+// If format is nil or not set, use FormatLevel instead.
 func (l *Logger) SetLevelFormat(format func(level int) string) {
 	l.fmtLvl = format
 }
