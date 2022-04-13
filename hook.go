@@ -62,3 +62,38 @@ func Caller(key string) Hook {
 		}
 	})
 }
+
+// GetCallStack returns the call stacks.
+func GetCallStack(skip int) []string {
+	var pcs [128]uintptr
+	n := runtime.Callers(skip, pcs[:])
+	if n == 0 {
+		return nil
+	}
+
+	stacks := make([]string, 0, n)
+	frames := runtime.CallersFrames(pcs[:n])
+	for {
+		frame, more := frames.Next()
+		if !more {
+			break
+		}
+
+		const mark = "/src/"
+		if index := strings.Index(frame.File, mark); index > -1 {
+			frame.File = frame.File[index+len(mark):]
+		}
+
+		if frame.Function == "" {
+			stacks = append(stacks, fmt.Sprintf("%s:%d", frame.File, frame.Line))
+		} else {
+			name := frame.Function
+			if index := strings.LastIndexByte(frame.Function, '.'); index > -1 {
+				name = frame.Function[index+1:]
+			}
+			stacks = append(stacks, fmt.Sprintf("%s:%s:%d", frame.File, name, frame.Line))
+		}
+	}
+
+	return stacks
+}

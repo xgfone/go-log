@@ -1,4 +1,4 @@
-// Copyright 2021 xgfone
+// Copyright 2021~2022 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -98,16 +98,24 @@ func Ef(err error, format string, args ...interface{}) {
 	DefaultLogger.getEmitter(LvlError, 1).Kv("err", err).Printf(format, args...)
 }
 
-// IfErr logs the message and key-values with the ERROR level
-// only if err is not equal to nil.
-func IfErr(err error, msg string, kvs ...interface{}) { ifErr(err, msg, kvs...) }
-
-// WrapPanic wraps and logs the panic.
-func WrapPanic(kvs ...interface{}) { ifErr(recover(), "panic", kvs...) }
-
-func ifErr(err interface{}, msg string, kvs ...interface{}) {
-	if err == nil {
-		return
+// IfErr is the same as Err, but only if err is not equal to nil.
+func IfErr(err error, msg string, keysAndValues ...interface{}) {
+	if err != nil {
+		DefaultLogger.getEmitter(LvlError, 1).Kvs(keysAndValues...).
+			Kv("err", err).Printf(msg)
 	}
-	DefaultLogger.getEmitter(LvlError, 2).Kvs(kvs...).Kv("err", err).Printf(msg)
+}
+
+// WrapPanic wraps and logs the panic, which should be called directly with defer,
+// For example,
+//   defer WrapPanic()
+//   defer WrapPanic("key1", "value1")
+//   defer WrapPanic("key1", "value1", "key2", "value2")
+//   defer WrapPanic("key1", "value1", "key2", "value2", "key3", "value3")
+func WrapPanic(keysAndValues ...interface{}) {
+	if r := recover(); r != nil {
+		DefaultLogger.getEmitter(LvlError, 2).Kvs(keysAndValues...).
+			StrSlice("stacks", GetCallStack(4)).Kv("panic", r).
+			Printf("wrap a panic")
+	}
 }
