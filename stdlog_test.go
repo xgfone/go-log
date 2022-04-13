@@ -39,10 +39,10 @@ func TestStdLogger(t *testing.T) {
 	StdLogger("", LvlDebug).Printf("msg4")
 
 	expects := []string{
-		`{"lvl":"debug","caller":"stdlog_test.go:32:TestStdLogger","msg":"msg1"}`,
-		`{"lvl":"debug","caller":"stdlog_test.go:33:TestStdLogger","msg":"msg2"}`,
-		`{"lvl":"debug","caller":"stdlog_test.go:37:TestStdLogger","msg":"msg3"}`,
-		`{"lvl":"debug","caller":"stdlog_test.go:39:TestStdLogger","msg":"msg4"}`,
+		`{"lvl":"debug","caller":"stdlog_test.go:TestStdLogger:32","msg":"msg1"}`,
+		`{"lvl":"debug","caller":"stdlog_test.go:TestStdLogger:33","msg":"msg2"}`,
+		`{"lvl":"debug","caller":"stdlog_test.go:TestStdLogger:37","msg":"msg3"}`,
+		`{"lvl":"debug","caller":"stdlog_test.go:TestStdLogger:39","msg":"msg4"}`,
 		``,
 	}
 	testStrings(t, "stdlog", expects, strings.Split(buf.String(), "\n"))

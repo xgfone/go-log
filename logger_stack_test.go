@@ -36,11 +36,11 @@ func TestLoggerStack(t *testing.T) {
 
 	const prefix = `{"lvl":"info","logger":"test","caller":"logger_stack_test.go:`
 	expects := []string{
-		prefix + `31:TestLoggerStack","msg":"msg1"}`,
-		prefix + `32:TestLoggerStack","msg":"msg2"}`,
-		prefix + `33:TestLoggerStack","k1":"v1","msg":"msg3"}`,
-		prefix + `34:TestLoggerStack","k2":"v2","msg":"msg4"}`,
-		prefix + `35:TestLoggerStack","msg":"msg5"}`,
+		prefix + `TestLoggerStack:31","msg":"msg1"}`,
+		prefix + `TestLoggerStack:32","msg":"msg2"}`,
+		prefix + `TestLoggerStack:33","k1":"v1","msg":"msg3"}`,
+		prefix + `TestLoggerStack:34","k2":"v2","msg":"msg4"}`,
+		prefix + `TestLoggerStack:35","msg":"msg5"}`,
 		``,
 	}
 	testStrings(t, "logger_stack", expects, strings.Split(buf.String(), "\n"))
@@ -57,10 +57,10 @@ func TestGlobalStack(t *testing.T) {
 	Ef(errors.New("error"), "msg4")
 
 	expects := []string{
-		`{"lvl":"info","caller":"logger_stack_test.go:54:TestGlobalStack","msg":"msg1"}`,
-		`{"lvl":"info","caller":"logger_stack_test.go:55:TestGlobalStack","msg":"msg2"}`,
-		`{"lvl":"error","caller":"logger_stack_test.go:56:TestGlobalStack","err":"error","msg":"msg3"}`,
-		`{"lvl":"error","caller":"logger_stack_test.go:57:TestGlobalStack","err":"error","msg":"msg4"}`,
+		`{"lvl":"info","caller":"logger_stack_test.go:TestGlobalStack:54","msg":"msg1"}`,
+		`{"lvl":"info","caller":"logger_stack_test.go:TestGlobalStack:55","msg":"msg2"}`,
+		`{"lvl":"error","caller":"logger_stack_test.go:TestGlobalStack:56","err":"error","msg":"msg3"}`,
+		`{"lvl":"error","caller":"logger_stack_test.go:TestGlobalStack:57","err":"error","msg":"msg4"}`,
 		``,
 	}
 	testStrings(t, "global_stack", expects, strings.Split(buf.String(), "\n"))

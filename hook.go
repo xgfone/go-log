@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 // Hook is used to add the dynamic value into the log record.
@@ -45,15 +46,14 @@ func (l Logger) WithHooks(hooks ...Hook) Logger {
 
 // CallerFormatFunc is used to format the file, name and line of the caller.
 var CallerFormatFunc = func(file, name string, line int) string {
-	name = filepath.Ext(name)
-	if len(name) > 0 && name[0] == '.' {
-		name = name[1:]
+	if index := strings.LastIndexByte(name, '.'); index > -1 {
+		name = name[index+1:]
 	}
-	return fmt.Sprintf("%s:%d:%s", filepath.Base(file), line, name)
+	return fmt.Sprintf("%s:%s:%d", filepath.Base(file), name, line)
 }
 
 // Caller returns a callback function that returns the caller
-// like "File:Line:FunctionName".
+// like "File:FunctionName:Line".
 func Caller(key string) Hook {
 	return HookFunc(func(e *Emitter, name string, level, depth int) {
 		if pc, file, line, ok := runtime.Caller(depth + 1); ok {
