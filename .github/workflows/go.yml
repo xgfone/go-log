@@ -35,4 +35,8 @@ jobs:
         if [ $version -lt 11 ]; then
             go get -v -t -d
         fi
-    - run: go test -race ./...
+    - run: |
+        mkdir -p /home/runner/go/src/github.com/xgfone/go-log
+        cp -r ./* /home/runner/go/src/github.com/xgfone/go-log
+        cd /home/runner/go/src/github.com/xgfone/go-log
+        go test -race ./...
