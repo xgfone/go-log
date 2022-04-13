@@ -98,6 +98,12 @@ func Ef(err error, format string, args ...interface{}) {
 	DefaultLogger.getEmitter(LvlError, 1).Kv("err", err).Printf(format, args...)
 }
 
+// Err logs the error message and key-values with the ERROR level.
+func Err(err error, msg string, keysAndValues ...interface{}) {
+	DefaultLogger.getEmitter(LvlError, 1).Kvs(keysAndValues...).
+		Kv("err", err).Printf(msg)
+}
+
 // IfErr is the same as Err, but only if err is not equal to nil.
 func IfErr(err error, msg string, keysAndValues ...interface{}) {
 	if err != nil {
