@@ -79,9 +79,11 @@ func GetCallStack(skip int) []string {
 			break
 		}
 
-		const mark = "/src/"
-		if index := strings.Index(frame.File, mark); index > -1 {
-			frame.File = frame.File[index+len(mark):]
+		for _, mark := range trimPrefixes {
+			if index := strings.Index(frame.File, mark); index > -1 {
+				frame.File = frame.File[index+len(mark):]
+				break
+			}
 		}
 
 		if frame.Function == "" {
@@ -97,3 +99,5 @@ func GetCallStack(skip int) []string {
 
 	return stacks
 }
+
+var trimPrefixes = []string{"/src/", "/pkg/mod/"}
