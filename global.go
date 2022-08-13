@@ -67,31 +67,49 @@ func SetLevelFormat(format func(level int) string) {
 }
 
 // LevelLog is equal to DefaultLogger.Level(level, depth).
-func LevelLog(level, depth int) *Emitter { return DefaultLogger.Level(level, depth+1) }
+func LevelLog(level, depth int) *Emitter {
+	return DefaultLogger.Level(level, depth+1)
+}
 
-// Trace is equal to DefaultLogger.Trace().
-func Trace() *Emitter { return DefaultLogger.getEmitter(LvlTrace, 1) }
+// Trace is equal to DefaultLogger.Trace(kvs...).
+func Trace(kvs ...interface{}) *Emitter {
+	return DefaultLogger.getEmitter(LvlTrace, 1).Kvs(kvs...)
+}
 
-// Debug is equal to DefaultLogger.Debug().
-func Debug() *Emitter { return DefaultLogger.getEmitter(LvlDebug, 1) }
+// Debug is equal to DefaultLogger.Debug(kvs...).
+func Debug(kvs ...interface{}) *Emitter {
+	return DefaultLogger.getEmitter(LvlDebug, 1).Kvs(kvs...)
+}
 
-// Info is equal to DefaultLogger.Info().
-func Info() *Emitter { return DefaultLogger.getEmitter(LvlInfo, 1) }
+// Info is equal to DefaultLogger.Info(kvs...).
+func Info(kvs ...interface{}) *Emitter {
+	return DefaultLogger.getEmitter(LvlInfo, 1).Kvs(kvs...)
+}
 
-// Warn is equal to DefaultLogger.Warn().
-func Warn() *Emitter { return DefaultLogger.getEmitter(LvlWarn, 1) }
+// Warn is equal to DefaultLogger.Warn(kvs...).
+func Warn(kvs ...interface{}) *Emitter {
+	return DefaultLogger.getEmitter(LvlWarn, 1).Kvs(kvs...)
+}
 
-// Error is equal to DefaultLogger.Error().
-func Error() *Emitter { return DefaultLogger.getEmitter(LvlError, 1) }
+// Error is equal to DefaultLogger.Error(kvs...).
+func Error(kvs ...interface{}) *Emitter {
+	return DefaultLogger.getEmitter(LvlError, 1).Kvs(kvs...)
+}
 
-// Alert is equal to DefaultLogger.Alert()).
-func Alert() *Emitter { return DefaultLogger.getEmitter(LvlAlert, 1) }
+// Alert is equal to DefaultLogger.Alert(kvs...)).
+func Alert(kvs ...interface{}) *Emitter {
+	return DefaultLogger.getEmitter(LvlAlert, 1).Kvs(kvs...)
+}
 
-// Panic is equal to DefaultLogger.Panic().
-func Panic() *Emitter { return DefaultLogger.getEmitter(LvlPanic, 1) }
+// Panic is equal to DefaultLogger.Panic(kvs...).
+func Panic(kvs ...interface{}) *Emitter {
+	return DefaultLogger.getEmitter(LvlPanic, 1).Kvs(kvs...)
+}
 
-// Fatal is equal to DefaultLogger.Fatal().
-func Fatal() *Emitter { return DefaultLogger.getEmitter(LvlFatal, 1) }
+// Fatal is equal to DefaultLogger.Fatal(kvs...).
+func Fatal(kvs ...interface{}) *Emitter {
+	return DefaultLogger.getEmitter(LvlFatal, 1).Kvs(kvs...)
+}
 
 // Ef is equal to DefaultLogger.Error().Kv("err", err).Printf(format, args...).
 func Ef(err error, format string, args ...interface{}) {

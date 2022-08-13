@@ -149,26 +149,42 @@ func (l Logger) Level(level, depth int) *Emitter {
 	return newEmitter(l, level, l.depth+depth)
 }
 
-// Trace is equal to l.Level(LvlTrace, 0).
-func (l Logger) Trace() *Emitter { return newEmitter(l, LvlTrace, l.depth) }
+// Trace is equal to l.Level(LvlTrace, 0).Kvs(kvs...).
+func (l Logger) Trace(kvs ...interface{}) *Emitter {
+	return newEmitter(l, LvlTrace, l.depth).Kvs(kvs...)
+}
 
-// Debug is equal to l.Level(LvlDebug, 0).
-func (l Logger) Debug() *Emitter { return newEmitter(l, LvlDebug, l.depth) }
+// Debug is equal to l.Level(LvlDebug, 0).Kvs(kvs...).
+func (l Logger) Debug(kvs ...interface{}) *Emitter {
+	return newEmitter(l, LvlDebug, l.depth).Kvs(kvs...)
+}
 
-// Info is equal to l.Level(LvlInfo, 0).
-func (l Logger) Info() *Emitter { return newEmitter(l, LvlInfo, l.depth) }
+// Info is equal to l.Level(LvlInfo, 0).Kvs(kvs...).
+func (l Logger) Info(kvs ...interface{}) *Emitter {
+	return newEmitter(l, LvlInfo, l.depth).Kvs(kvs...)
+}
 
-// Warn is equal to l.Level(LvlWarn, 0).
-func (l Logger) Warn() *Emitter { return newEmitter(l, LvlWarn, l.depth) }
+// Warn is equal to l.Level(LvlWarn, 0).Kvs(kvs...).
+func (l Logger) Warn(kvs ...interface{}) *Emitter {
+	return newEmitter(l, LvlWarn, l.depth).Kvs(kvs...)
+}
 
-// Error is equal to l.Level(LvlError, 0).
-func (l Logger) Error() *Emitter { return newEmitter(l, LvlError, l.depth) }
+// Error is equal to l.Level(LvlError, 0).Kvs(kvs...).
+func (l Logger) Error(kvs ...interface{}) *Emitter {
+	return newEmitter(l, LvlError, l.depth).Kvs(kvs...)
+}
 
-// Alert is equal to l.Level(LvlAlert, 0).
-func (l Logger) Alert() *Emitter { return newEmitter(l, LvlAlert, l.depth) }
+// Alert is equal to l.Level(LvlAlert, 0).Kvs(kvs...).
+func (l Logger) Alert(kvs ...interface{}) *Emitter {
+	return newEmitter(l, LvlAlert, l.depth).Kvs(kvs...)
+}
 
-// Panic is equal to l.Level(LvlPanic, 0).
-func (l Logger) Panic() *Emitter { return newEmitter(l, LvlPanic, l.depth) }
+// Panic is equal to l.Level(LvlPanic, 0).Kvs(kvs...).
+func (l Logger) Panic(kvs ...interface{}) *Emitter {
+	return newEmitter(l, LvlPanic, l.depth).Kvs(kvs...)
+}
 
-// Fatal is equal to l.Level(LvlFatal, 0).
-func (l Logger) Fatal() *Emitter { return newEmitter(l, LvlFatal, l.depth) }
+// Fatal is equal to l.Level(LvlFatal, 0).Kvs(kvs...).
+func (l Logger) Fatal(kvs ...interface{}) *Emitter {
+	return newEmitter(l, LvlFatal, l.depth).Kvs(kvs...)
+}
