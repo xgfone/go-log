@@ -260,6 +260,13 @@ func (enc *JSONEncoder) appendAny(buf []byte, any interface{}) []byte {
 	case fmt.Stringer:
 		buf = AppendJSONString(buf, v.String())
 
+	case json.RawMessage:
+		if v == nil {
+			buf = append(buf, "null"...)
+		} else {
+			buf = append(buf, v...)
+		}
+
 	case json.Marshaler:
 		if data, err := v.MarshalJSON(); err != nil {
 			buf = AppendJSONString(buf, fmt.Sprintf("JSONEncoderError: %s", err.Error()))
@@ -276,6 +283,13 @@ func (enc *JSONEncoder) appendAny(buf []byte, any interface{}) []byte {
 			buf = enc.appendAny(buf, _v)
 		}
 		buf = append(buf, ']')
+
+	case []byte:
+		if v == nil {
+			buf = append(buf, "null"...)
+		} else {
+			buf = append(buf, v...)
+		}
 
 	case []string:
 		buf = append(buf, '[')

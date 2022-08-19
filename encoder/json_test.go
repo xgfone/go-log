@@ -64,6 +64,8 @@ func TestJSONEncoder(t *testing.T) {
 	buf = enc.Encode(buf, "[]int64", []int64{36, 37})
 	buf = enc.Encode(buf, "map[string]interface{}", map[string]interface{}{"a": "38", "b": "39"})
 	buf = enc.Encode(buf, "map[string]string", map[string]string{"c": "40", "d": "41"})
+	buf = enc.Encode(buf, "bytes1", []byte(`"42"`))
+	buf = enc.Encode(buf, "bytes2", []byte(`[43, 44]`))
 	buf = enc.End(buf, `"test json encoder"`)
 
 	type encoderT struct {
@@ -107,6 +109,9 @@ func TestJSONEncoder(t *testing.T) {
 
 		MapString    map[string]string      `json:"map[string]string"`
 		MapInterface map[string]interface{} `json:"map[string]interface{}"`
+
+		Bytes1 string `json:"bytes1"`
+		Bytes2 []int  `json:"bytes2"`
 	}
 
 	expect := encoderT{
@@ -150,6 +155,9 @@ func TestJSONEncoder(t *testing.T) {
 
 		MapInterface: map[string]interface{}{"a": "38", "b": "39"},
 		MapString:    map[string]string{"c": "40", "d": "41"},
+
+		Bytes1: "42",
+		Bytes2: []int{43, 44},
 	}
 
 	var result encoderT
