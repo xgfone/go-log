@@ -65,7 +65,7 @@ func UnwrapWriter(writer io.Writer) io.Writer {
 /// ----------------------------------------------------------------------- ///
 
 type safeWriter struct {
-	writer io.Writer
+	writer LevelWriter
 	lock   sync.Mutex
 }
 
@@ -83,6 +83,13 @@ func (w *safeWriter) Write(p []byte) (n int, err error) {
 	return
 }
 
+func (w *safeWriter) WriteLevel(level int, p []byte) (n int, err error) {
+	w.lock.Lock()
+	n, err = w.writer.WriteLevel(level, p)
+	w.lock.Unlock()
+	return
+}
+
 func (w *safeWriter) UnwrapWriter() io.Writer { return w.writer }
 
 // SafeWriter is guaranteed that only a single writing operation can proceed
@@ -93,7 +100,7 @@ func SafeWriter(writer io.Writer) io.WriteCloser {
 	if writer == nil {
 		panic("SafeWriter: the wrapped writer is nil")
 	}
-	return &safeWriter{writer: writer}
+	return &safeWriter{writer: ToLevelWriter(writer)}
 }
 
 /// ----------------------------------------------------------------------- ///
