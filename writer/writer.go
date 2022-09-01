@@ -40,6 +40,25 @@ func Close(writer io.Writer) (err error) {
 	}
 }
 
+// Flush flushes the writer if it has implemented the interface Flusher.
+func Flush(writer io.Writer) (err error) {
+	switch w := writer.(type) {
+	case Flusher:
+		return w.Flush()
+
+	case WrappedWriter:
+		return Flush(w.UnwrapWriter())
+
+	default:
+		return nil
+	}
+}
+
+// Flusher is used to flush the data in the writer to the underlying storage media.
+type Flusher interface {
+	Flush() error
+}
+
 /// ----------------------------------------------------------------------- ///
 
 // WrappedWriter is a writer which wraps and returns the inner writer.
