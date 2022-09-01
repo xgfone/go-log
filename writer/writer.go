@@ -33,7 +33,7 @@ func Close(writer io.Writer) (err error) {
 		return w.Close()
 
 	case WrappedWriter:
-		return Close(w)
+		return Close(w.UnwrapWriter())
 
 	default:
 		return nil
