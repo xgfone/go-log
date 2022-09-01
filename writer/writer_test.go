@@ -32,7 +32,7 @@ func TestClose(t *testing.T) {
 }
 
 func TestLevelWriterFlush(t *testing.T) {
-	lw := ToLevelWriter(lwriter{io.Discard})
+	lw := ToLevelWriter(lwriter{Discard})
 	if _, ok := lw.(Flusher); !ok {
 		t.Error("expect a Flusher writer, but not")
 	}
