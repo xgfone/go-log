@@ -15,7 +15,6 @@
 package writer
 
 import (
-	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
@@ -56,11 +55,3 @@ func TestMultiLevelWriter(t *testing.T) {
 		t.Errorf("expect log '%s', but got '%s'", infolog, s)
 	}
 }
-
-func TestClose(t *testing.T) {
-	Close(lwriter{bytes.NewBuffer(nil)})
-}
-
-type lwriter struct{ io.Writer }
-
-func (lw lwriter) UnwrapWriter() io.Writer { return lw.Writer }

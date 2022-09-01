@@ -95,6 +95,13 @@ func (w *safeWriter) Close() (err error) {
 	return
 }
 
+func (w *safeWriter) Flush() (err error) {
+	w.lock.Lock()
+	err = Flush(w.writer)
+	w.lock.Unlock()
+	return
+}
+
 func (w *safeWriter) Write(p []byte) (n int, err error) {
 	w.lock.Lock()
 	n, err = w.writer.Write(p)
@@ -112,7 +119,8 @@ func (w *safeWriter) WriteLevel(level int, p []byte) (n int, err error) {
 func (w *safeWriter) UnwrapWriter() io.Writer { return w.writer }
 
 // SafeWriter is guaranteed that only a single writing operation can proceed
-// at a time.
+// at a time, which implements the interface LevelWriter, WrappedWriter and
+// Flusher.
 //
 // It's necessary for thread-safe concurrent writes.
 func SafeWriter(writer io.Writer) io.WriteCloser {
@@ -125,24 +133,22 @@ func SafeWriter(writer io.Writer) io.WriteCloser {
 /// ----------------------------------------------------------------------- ///
 
 type bufWriter struct {
-	bufw *bufio.Writer
-	orig io.Writer
+	*bufio.Writer
+	w io.Writer
 }
 
-func (w bufWriter) UnwrapWriter() io.Writer     { return w.orig }
-func (w bufWriter) Write(p []byte) (int, error) { return w.bufw.Write(p) }
-func (w bufWriter) Close() error {
-	w.bufw.Flush()
-	return Close(w.orig)
-}
+func (w bufWriter) UnwrapWriter() io.Writer     { return w.w }
+func (w bufWriter) Write(p []byte) (int, error) { return w.Writer.Write(p) }
+func (w bufWriter) Close() error                { w.Flush(); return Close(w.w) }
 
-// BufferWriter returns a buffer writer, which writes the data into the buffer
-// and flushes all the datas into the wrapped writer when the buffer is full.
+// BufferWriter returns a buffer writer, which implements the interfaces
+// Flusher and WrappedWriter, writes the data into the buffer and flushes
+// all the datas into the wrapped writer when the buffer is full.
 //
 // If bufSize is equal to or less than 0, it is 4096 by default.
 func BufferWriter(writer io.Writer, bufSize int) io.WriteCloser {
 	if writer == nil {
 		panic("BufferWriter: the wrapped writer is nil")
 	}
-	return bufWriter{orig: writer, bufw: bufio.NewWriterSize(writer, bufSize)}
+	return bufWriter{w: writer, Writer: bufio.NewWriterSize(writer, bufSize)}
 }

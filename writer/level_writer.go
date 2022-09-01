@@ -22,7 +22,8 @@ type LevelWriter interface {
 	io.Writer
 }
 
-// ToLevelWriter converts the io.Writer to LevelWriter.
+// ToLevelWriter converts the io.Writer to LevelWriter, which implements
+// the interface WrappedWriter, Flusher and io.Closer.
 func ToLevelWriter(writer io.Writer) LevelWriter {
 	if lw, ok := writer.(LevelWriter); ok {
 		return lw
@@ -34,7 +35,8 @@ type lvlWriter struct{ io.Writer }
 
 func (lw lvlWriter) UnwrapWriter() io.Writer                 { return lw.Writer }
 func (lw lvlWriter) WriteLevel(l int, p []byte) (int, error) { return lw.Write(p) }
-func (lw lvlWriter) Close() (err error)                      { return Close(lw.Writer) }
+func (lw lvlWriter) Flush() error                            { return Flush(lw.Writer) }
+func (lw lvlWriter) Close() error                            { return Close(lw.Writer) }
 
 /// ----------------------------------------------------------------------- ///
 
@@ -80,6 +82,23 @@ func (w lvlSplitWriter) Close() (err error) {
 	}
 	for _, lw := range w.lws {
 		if err := Close(lw); err != nil {
+			errors = append(errors, err)
+		}
+	}
+
+	if len(errors) == 0 {
+		return nil
+	}
+	return errors
+}
+
+func (w lvlSplitWriter) Flush() (err error) {
+	var errors werrors
+	if err := Flush(w.dw); err != nil {
+		errors = append(errors, err)
+	}
+	for _, lw := range w.lws {
+		if err := Flush(lw); err != nil {
 			errors = append(errors, err)
 		}
 	}
