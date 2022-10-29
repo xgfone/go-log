@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/xgfone/go-atexit"
 	"github.com/xgfone/go-log/writer"
 )
 
@@ -108,7 +107,10 @@ func (e *Emitter) emit(msg string) {
 	emitterPool.Put(e)
 
 	if level == LvlFatal {
-		atexit.Exit(1)
+		if OnExit != nil {
+			OnExit()
+		}
+		exit(1)
 	} else if level >= LvlPanic {
 		panic(msg)
 	}

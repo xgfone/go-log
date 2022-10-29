@@ -16,6 +16,7 @@ package log
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync/atomic"
 )
@@ -32,6 +33,11 @@ const (
 	LvlFatal   = int(126)
 	LvlDisable = int(127)
 )
+
+// OnExit is called before the program exits when to emit the log with LvlFatal.
+var OnExit func()
+
+var exit = os.Exit
 
 // LevelIsValid reports whether the level is valid, that's, [LvlTrace, LvlDisable].
 func LevelIsValid(level int) bool {
@@ -122,16 +128,15 @@ func formatLevel(level int) string {
 //
 // Support the level string as follow, which is case insensitive:
 //
-//   trace
-//   debug
-//   info
-//   warn
-//   error
-//   alert
-//   panic
-//   fatal
-//   disable
-//
+//	trace
+//	debug
+//	info
+//	warn
+//	error
+//	alert
+//	panic
+//	fatal
+//	disable
 func ParseLevel(level string, defaultLevel ...int) int {
 	switch strings.ToLower(level) {
 	case "trace":

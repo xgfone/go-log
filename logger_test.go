@@ -20,7 +20,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/xgfone/go-atexit"
 	jencoder "github.com/xgfone/go-log/encoder"
 )
 
@@ -88,7 +87,8 @@ func TestChildLoggerName(t *testing.T) {
 func TestLevelPanicAndFatal(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	logger := New("").WithWriter(buf).WithEncoder(newTestEncoder())
-	atexit.ExitFunc = func(code int) { fmt.Fprintf(buf, "exit with %d\n", code) }
+	OnExit = func() { buf.WriteString("exit\n") }
+	exit = func(int) {}
 
 	func() {
 		defer func() {
@@ -104,7 +104,7 @@ func TestLevelPanicAndFatal(t *testing.T) {
 		`{"lvl":"panic","msg":"msg1"}`,
 		`panic: msg1`,
 		`{"lvl":"fatal","msg":"msg2"}`,
-		`exit with 1`,
+		`exit`,
 		``,
 	}
 	testStrings(t, "panic_fatal", expects, strings.Split(buf.String(), "\n"))
