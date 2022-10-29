@@ -112,6 +112,11 @@ func (enc *JSONEncoder) Start(buf []byte, name, level string) []byte {
 	return buf
 }
 
+// Encode implements the interface Encoder by using kvjson.JSON.EncodeKV.
+func (enc *JSONEncoder) Encode(buf []byte, key string, value interface{}) []byte {
+	return enc.JSON.EncodeKV(buf, key, value)
+}
+
 // End implements the interface Encoder.
 func (enc *JSONEncoder) End(buf []byte, msg string) []byte {
 	// Msg

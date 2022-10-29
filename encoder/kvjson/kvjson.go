@@ -64,9 +64,9 @@ func (j JSON) EncodeKV(buf []byte, key string, value interface{}) []byte {
 	return buf
 }
 
-// Encode is the alias of EncodeKV.
-func (j JSON) Encode(buf []byte, key string, value interface{}) []byte {
-	return j.EncodeKV(buf, key, value)
+// Encode is the alias of EncodeAny.
+func (j JSON) Encode(buf []byte, value interface{}) []byte {
+	return j.EncodeAny(buf, value)
 }
 
 // EncodeTime encodes the time.
